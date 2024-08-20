@@ -43,12 +43,13 @@ void print_filename(struct filename *f)
   printf("/%s", f->name);
 }
 
-void print_list_entry(struct list_entries *l)
+void print_list_entry(struct list_entries *l, bool reverse_order)
 {
-  struct entry *e = l->entries; 
-  for(size_t i=0; i<l->n; i++){
-    print_filename(e[i].name);
-    printf("\t%lu.%lu", e[i].date.tv_sec, e[i].date.tv_nsec);
+  size_t n = l->n;
+  for(size_t i=0; i<n; i++){
+    struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
+    print_filename(e->name);
+    printf("\t%lu.%lu", e->date.tv_sec, e->date.tv_nsec);
     putchar('\n');
   }
 }

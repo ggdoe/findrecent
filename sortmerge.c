@@ -75,8 +75,7 @@ int cmp_date(const void *p1, const void *p2)
 
 void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_threads)
 {
-  size_t cur=0;
-  for(size_t i=0; i<nb_threads; i++){
+  for(int i=0; i<nb_threads; i++){
     ll[i].cap = ll[i].n;
     ll[i].n = 0;
   }
@@ -86,8 +85,8 @@ void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_t
   
   for(size_t cur=0; cur<l->n; cur++) {
     struct entry *minval = &maximum_value;
-    size_t argmin;
-    for(size_t i=0; i<nb_threads; i++) {
+    size_t argmin = 0;
+    for(int i=0; i<nb_threads; i++) {
       if(ll[i].n >= ll[i].cap) continue;
       struct entry *curval = get_entry(i);
       if(cmp_date(curval, minval)<0) {
