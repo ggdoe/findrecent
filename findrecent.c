@@ -25,7 +25,7 @@ struct list_entries findrecent(char *directory, const struct options *options)
   
   // remove a '/' when necessary to get the same output as 'find'
   size_t len = strlen(directory)-1;
-  if(directory[len] == '/') directory[len] = '\0'; 
+  if(len > 1 && directory[len] == '/') directory[len] = '\0'; 
   
   struct filename *path;
   switch(options->search_type)
@@ -50,6 +50,22 @@ struct list_entries findrecent(char *directory, const struct options *options)
   return l;
 }
 
+static inline
+bool is_path_excluded(char* exclude_list, const char* filename)
+{
+  if(!strcmp(filename, ".") || !strcmp(filename, "..")) return true;
+  
+  char* cur = exclude_list;
+  while(*cur != '\0'){
+    size_t len = strlen(cur);
+    if(!strncmp(filename, cur, len)) {
+      return true;
+    }
+    cur += len + 1;
+  }
+  return false;
+}
+
 void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *options)
 {
   char buf[GETDENTS_BUFSIZE];
@@ -66,8 +82,8 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
     {
       d = (struct linux_dirent64*)(buf + off);
       const char* filename = d->d_name;
-
-      if(!strcmp(filename, ".") || !strcmp(filename, "..")) continue;
+      
+      if(is_path_excluded(options->exclude_list, filename)) continue;
 
       if(d->d_type == options->search_type){
         push_entry(l, filename, fd, path, options->date_type);
