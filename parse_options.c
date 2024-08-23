@@ -33,6 +33,7 @@ struct arguments {
   bool inc_max_fd;
   bool no_exclude;
 
+  bool parsing_failed;
   bool print_config;
   uint32_t exclude_list_count;
   uint32_t exclude_list_capa;
@@ -116,6 +117,7 @@ struct arguments default_arguments()
     .inc_max_fd     = false,
     .no_exclude     = false,
 
+    .parsing_failed = false,
     .print_config   = false,
     .exclude_list_count = 0,
     .exclude_list_capa  = INTIAL_EXCLUDE_LIST_SIZE
@@ -125,24 +127,28 @@ struct arguments default_arguments()
 static inline
 void push_exclude_path(struct arguments *arguments, const char* path)
 {
-  size_t len = strlen(path) + 1;
-  
-  // subdirectories are not supported
-  char* slash = strchr(path, '/');
-  char* cur=slash;
-  if(cur != NULL) 
-    while(1) {// trim end
-      cur++; len--;
-      if(*cur == '\0'){
-        *slash = '\0';
-        break;
-      }
-      else if(*cur != '/'){
+  char buf[NAME_MAX];
+  size_t len = 0;
+  for(const char* cur=path;; cur++)
+  {
+    // trim '/' at the end
+    if(*cur == '/'){
+      while(*++cur == '/');
+      if(*cur != '\0'){
         fprintf(stderr, "subdirectories are not supported in exclude path: `%s`\n", path);
+        arguments->parsing_failed = true;
         return;
       }
     }
-
+    if(*cur == '\0') break;
+    buf[len++] = *cur;
+    
+    // remove supernumerary '*'
+    if(*cur == '*')
+      while(cur[1] == '*') cur++;
+  }
+  buf[len++] = '\0';
+  
   uint32_t *count = &arguments->exclude_list_count;
   uint32_t *capa  = &arguments->exclude_list_capa;
   char** exclude_list = &arguments->options.exclude_list;
@@ -151,7 +157,7 @@ void push_exclude_path(struct arguments *arguments, const char* path)
     *exclude_list = (char*)realloc(*exclude_list, *capa * 2);
     *capa *= 2;
   }
-  memcpy(*exclude_list + *count, path, len*sizeof(char));
+  memcpy(*exclude_list + *count, buf, len*sizeof(char));
   *count += len;
   (*exclude_list)[*count] = '\0';
 }
@@ -222,7 +228,7 @@ char* parsing_quote(char* str)
       }
       else if(*c == quote){
         *c = '\0';
-        return c;
+        return c+1;
       }
     }
   }
@@ -243,14 +249,14 @@ void parse_config_files(struct arguments *arguments)
   else
     strcpy(config_file, CONFIG_FILE);
 
-  #if 1
   int fd = open(config_file, O_RDWR);
   if(fd>=0)
   {
     struct stat64 stat;
     fstat64(fd, &stat);
-    char* config_raw = (char*) mmap64(NULL, (stat.st_size+1)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    config_raw[stat.st_size] = '\0';
+    char* config_raw = (char*) mmap64(NULL, (stat.st_size+2)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+    config_raw[stat.st_size] = '\n';
+    config_raw[stat.st_size+1] = '\0';
     int config_capa = 32, config_argc = 1;
     char** config_argv = (char**)malloc(config_capa * sizeof(char*));
     config_argv[0] = config_raw; // dummy argv[0] 
@@ -265,7 +271,6 @@ void parse_config_files(struct arguments *arguments)
     }
 
     // verify validity
-    bool parsing_failed = false;
     {
       int line = 0;
       for(char* cur=config_raw; *cur != '\0';){
@@ -279,11 +284,11 @@ void parse_config_files(struct arguments *arguments)
           fprintf(stderr, "command error line %d: ", line);
           fwrite(cur, sizeof(char), len, stderr);
           fprintf(stderr, "\n");
-          parsing_failed = true;
+          arguments->parsing_failed = true;
         }
         cur += len+1;
       }
-      if(parsing_failed){
+      if(arguments->parsing_failed){
         fprintf(stderr, "error parsing `"CONFIG_FILE"`, commands has to start with `-`.\n");
       }
     }
@@ -295,11 +300,16 @@ void parse_config_files(struct arguments *arguments)
       char* quote_end = parsing_quote(cur);
       if(!quote_end){
         fprintf(stderr, "error parsing `"CONFIG_FILE"`, unfinished quote: %s\n", cur);
-        parsing_failed = true;
+        arguments->parsing_failed = true;
       }
       else if(cur != quote_end){
+        if(!(*quote_end == ' ' || *quote_end == '\t' || *quote_end == '\n' || *quote_end == '\0')){
+          *(quote_end - 1) = *(quote_end - 2);
+          fprintf(stderr, "error parsing `"CONFIG_FILE"`, missing space after quote: %s\n", cur);
+          arguments->parsing_failed = true;
+        }
         config_argv[config_argc++] = cur+1; // ignore the quote symbol
-        cur = quote_end+1;
+        cur = quote_end;
       }
       else
         config_argv[config_argc++] = cur;
@@ -320,102 +330,16 @@ void parse_config_files(struct arguments *arguments)
       if(arg == -1)
         break;
       else if(arg == '?'){
-        parsing_failed = true;
+        arguments->parsing_failed = true;
       }
       parse_arg(arguments, arg);
     }
-    if(parsing_failed) {
-      fprintf(stderr, "Error parsing the config file `%s`\n", config_file);
-      exit(1);
-    } 
     optind=0; // reset getopt for next use of getopt
 
     free(config_argv);
     munmap(config_raw, stat.st_size*sizeof(char));
     close(fd);
   }
-  #else
-  
-  char* line_buffer = NULL;
-  size_t alloc_size = 0;
-  size_t line_number = 0;
-
-  FILE* config_findrecent = fopen64(config_file, "r");
-  if(config_findrecent)
-  {
-    while(1)
-    {
-      ssize_t n = getline(&line_buffer, &alloc_size, config_findrecent);
-      line_number++;
-      if(n<=0) break;
-      char* cur = line_buffer;
-      cur[n-1] = '\0'; // remove newline
-
-      while(*cur == ' ' || *cur == '\t' || *cur == '-') cur++; // trim left
-      if(*cur == '#' || *cur == '\0' || *cur == '\n') continue;
-      int arg = 0;
-      
-      for(struct option *opt=long_options; opt->name != 0; opt++){
-        if(!strncmp(opt->name, cur, strlen(opt->name))){
-          arg = opt->val;
-          if(opt->has_arg == required_argument){
-            optarg = cur + strlen(opt->name);
-          }
-          break;
-        }
-      }
-      if(!arg) {
-        if(cur[1] != ' ' && cur[1] != '\t' && cur[1] != '\0'){
-          fprintf(stderr, "error parsing `"CONFIG_FILE":%ld`, invalid argument: `%s`\n", line_number, cur);
-          continue;
-        }
-        else
-          for(struct option *opt=long_options; opt->name != 0; opt++){
-            if(opt->val == *cur){
-              arg = opt->val;
-              if(opt->has_arg == required_argument){
-                optarg = cur + 1;
-              }
-              break;
-            }
-          }
-      }
-// //////////
-//       char* quote_end = parsing_quote(cur);
-//       if(!quote_end){
-//         fprintf(stderr, "error parsing `"CONFIG_FILE"`, unfinished quote: %s\n", cur);
-//         parsing_failed = true;
-//       }
-//       else if(cur != quote_end){
-//         config_argv[config_argc++] = cur+1; // ignore the quote symbol
-//         cur = quote_end+1;
-//       }
-//       else
-//         config_argv[config_argc++] = cur;
-// /////////
-
-      if(optarg){
-        // while(*optarg == ' ' || *optarg == '\t') optarg++; // trim left
-        char* quote_end = parsing_quote(optarg);
-        if(!quote_end){ // parsing quote from `optarg`
-          fprintf(stderr, "error parsing `"CONFIG_FILE":%ld`, unfinished quote: `%s`\n", line_number, optarg);
-          optarg = NULL;
-          continue;
-        }
-      }
-
-      if(arg)
-        parse_arg(arguments, arg);
-      optarg = NULL;
-    
-    fclose(config_findrecent);
-    }
-  print_arguments_config(arguments);
-  exit(0);
-
-  }
-  if(line_buffer) free(line_buffer);
-  #endif
 }
 
 struct parsed_options parse_options(int argc, char** argv)
@@ -424,15 +348,18 @@ struct parsed_options parse_options(int argc, char** argv)
   
   // process config file
   parse_config_files(&arguments);
+  if(arguments.parsing_failed) {
+    fprintf(stderr, "Error parsing the config file `"CONFIG_FILE"`\n");
+    exit(1);
+  } 
 
   // process arguments
-  bool parsing_failed = false;
   while(1) {
     int arg = getopt_long_only(argc, argv, "FDt:d:rfce:h", long_options, NULL);
     if(arg == -1)
       break;
     else if(arg == '?')
-      parsing_failed = true;
+      arguments.parsing_failed = true;
     parse_arg(&arguments, arg);
   }
 
@@ -442,7 +369,7 @@ struct parsed_options parse_options(int argc, char** argv)
     while (optind < argc)
       fprintf (stderr, "`%s` ", argv[optind++]);
     fprintf (stderr, "\n");
-    parsing_failed = true;
+    arguments.parsing_failed = true;
   }
   else if (optind == argc-1)
     arguments.main_directory = argv[optind];
@@ -454,7 +381,10 @@ struct parsed_options parse_options(int argc, char** argv)
     print_arguments_config(&arguments);
     exit(0);
   }
-  if(parsing_failed) exit(1);
+  if(arguments.parsing_failed) {
+    fprintf(stderr, "Error parsing command line arguments.\n");
+    exit(1);
+  } 
 
   omp_set_num_threads(arguments.threads); // 3 best ?
   

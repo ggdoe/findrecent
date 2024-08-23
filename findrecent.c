@@ -50,20 +50,73 @@ struct list_entries findrecent(char *directory, const struct options *options)
   return l;
 }
 
+// static inline
+// bool is_path_excluded(char* exclude_list, const char* filename)
+// {
+//   if(!strcmp(filename, ".") || !strcmp(filename, "..")) return true;
+  
+//   char* cur = exclude_list;
+//   while(*cur != '\0'){
+//     size_t len = strlen(cur);
+//     if(!strncmp(filename, cur, len)) {
+//       return true;
+//     }
+//     cur += len + 1;
+//   }
+//   return false;
+// }
+
+// check star
 static inline
 bool is_path_excluded(char* exclude_list, const char* filename)
 {
   if(!strcmp(filename, ".") || !strcmp(filename, "..")) return true;
-  
-  char* cur = exclude_list;
-  while(*cur != '\0'){
-    size_t len = strlen(cur);
-    if(!strncmp(filename, cur, len)) {
+
+#if 0
+  char* cur_exclude = exclude_list;
+  while(*cur_exclude != '\0'){
+    size_t len_cur = strlen(cur_exclude);
+    size_t len = (len_cur > strlen(filename)) ? len_cur : strlen(filename);
+    
+    fwrite(cur_exclude, sizeof(char), len_cur, stdout);
+    printf("\t%s %25s\n", filename, !strncmp(filename, cur_exclude, len) ? "--> \033[1;31mKILL\033[0;0m" : "");
+
+    if(!strncmp(filename, cur_exclude, len)) {
       return true;
     }
-    cur += len + 1;
+    cur_exclude += len_cur + 1;
   }
   return false;
+#else
+  char* exclude = exclude_list;
+  while(*exclude != '\0'){
+    const char *cur_filename = filename;
+    char *cur_exclude = exclude;
+
+    while(*cur_filename == *cur_exclude){
+      if(*cur_exclude == '*')
+      {
+        unfinished
+      }
+      cur_exclude++;
+      cur_filename++;
+      if(*cur_filename == '\0' && *cur_exclude == '\0'){
+    printf("`");
+    fwrite(exclude, sizeof(char), strlen(exclude), stdout);
+    printf("`\t`%s` --> \033[1;31mMATCH\033[0;0m\n", filename);
+        return true;
+      }
+    } // failed to match, try next excluded
+
+    printf("`");
+    fwrite(exclude, sizeof(char), strlen(exclude), stdout);
+    printf("`\t`%s`\n", filename);
+
+    exclude += strlen(exclude) + 1;
+  }
+  return false;
+
+#endif
 }
 
 void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *options)
