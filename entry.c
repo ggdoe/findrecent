@@ -1,5 +1,4 @@
 #include "defs.h"
-#include <sys/stat.h>
 
 void push_entry(struct list_entries *restrict l, const char *restrict filename, int fd, struct filename *restrict pred, enum date_type type)
 {

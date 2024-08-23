@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,7 +17,6 @@
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
 #define checkptr(p) if(p == NULL) { perror(NULL); exit(1); }
 
-#define CONFIG_DIRECTORY     "~/.config/findrecent/"
 #define OPEN_FLAGS           O_DIRECTORY
 // #define OPEN_FLAGS        O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY
 
