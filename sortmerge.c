@@ -97,5 +97,5 @@ void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_t
     l->entries[cur] = *minval;
     ll[argmin].n++;
   }
-  #undef entry
+  #undef get_entry
 }
