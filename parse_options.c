@@ -5,21 +5,41 @@
 
 #define INTIAL_EXCLUDE_LIST_SIZE   4096
 #define CONFIG_FILE  "~/.config/findrecent/findrecent.conf"
+#define DEFAULT_THREADS_NUMBER     3
 
+#define SHORTOPT_STR "fdt:D:rT:Ie:h"
+#define TOK_FIND_FILES          'f'
+#define TOK_FIND_DIRECTORIES    'd'
+#define TOK_DATE_TYPE           't'
+#define TOK_REVERSE             'r'
+#define TOK_DEPTH               'D'
+#define TOK_FZF                 'F'
+#define TOK_COLOR               'c'
+#define TOK_THREADS             'T'
+#define TOK_INC_MAX             'I'
+#define TOK_EXCLUDE             'e'
+#define TOK_NO_EXCLUDE          'E'
+#define TOK_PRINT_CONFIG        'P'
+#define TOK_NO_CONFIG           'N'
+#define TOK_HELP                'h'
+
+const char* program_name; // just to show in help
+static const
 struct option long_options[] = {
-  {"find-files",       no_argument,       0, 'F'},
-  {"find-directories", no_argument,       0, 'D'},
-  {"date-type",        required_argument, 0, 't'},
-  {"reverse",          no_argument,       0, 'r'},
-  {"depth",            required_argument, 0, 'd'},
-  {"fzf",              no_argument,       0, 'f'},
-  {"color",            no_argument,       0, 'c'},
-  {"threads",          required_argument, 0, 'T'},
-  {"inc-max-fd",       no_argument,       0, 'i'},
-  {"exclude",          required_argument, 0, 'e'},
-  {"no-exclude",       no_argument,       0, 'E'},
-  {"help",             no_argument,       0, 'h'},
-  {"print-config",     no_argument,       0, 'P'},
+  {"find-files",       no_argument,       0, TOK_FIND_FILES      },
+  {"find-directories", no_argument,       0, TOK_FIND_DIRECTORIES},
+  {"date-type",        required_argument, 0, TOK_DATE_TYPE       },
+  {"reverse",          no_argument,       0, TOK_REVERSE         },
+  {"depth",            required_argument, 0, TOK_DEPTH           },
+  {"fzf",              no_argument,       0, TOK_FZF             },
+  {"color",            no_argument,       0, TOK_COLOR           },
+  {"threads",          required_argument, 0, TOK_THREADS         },
+  {"inc-max-fd",       no_argument,       0, TOK_INC_MAX         },
+  {"exclude",          required_argument, 0, TOK_EXCLUDE         },
+  {"no-exclude",       no_argument,       0, TOK_NO_EXCLUDE      },
+  {"print-config",     no_argument,       0, TOK_PRINT_CONFIG    },
+  {"no-config",        no_argument,       0, TOK_NO_CONFIG       },
+  {"help",             no_argument,       0, TOK_HELP            },
   {0, 0, 0, 0}
 };
 
@@ -35,45 +55,48 @@ struct arguments {
 
   bool parsing_failed;
   bool print_config;
+  bool no_config;
   uint32_t exclude_list_count;
   uint32_t exclude_list_capa;
 };
 
+
 static
 void print_help()
 {
+#define  STRINGIZING(s)  #s
+#define SSTRINGIZING(s)  STRINGIZING(s)
+#define DEFAULT_THREADS_NUMBER_STR  SSTRINGIZING(DEFAULT_THREADS_NUMBER)
   printf(
-    "find recently modified files\n\n"
-
+    "%s: find recently modified files or directories.\n"
     "options:\n"
-    "  -F, --find-files        : find files (default)\n"
-    "  -D, --find-directories  : find directories\n"
+    "  -f, --find-files        : find files (default).\n"
+    "  -d, --find-directories  : find directories.\n"
     "  -t, --date-type <str>   : change the sorting criterium, can be `creation`, \n"
-    "                            `access`, or `modification` (default: modification)\n"
-    "  -d, --depth <int>       : maximum depth of search\n"
-    "  -r, --reverse           : reverse the order\n"
-    "      --fzf               : show in fzf\n"
-    "      --color             : colorize output name\n"
-    "      --threads <int>     : specify the number of threads (default: 3),\n"
-    "                            high value may not be faster\n"
-    "      --inc-max-fd        : increase the maximum number of files descriptors opened \n"
-    "                            at the same time (may be necessary with lot of threads)\n"
-    // "  -e, --exclude <path>    : exclude directory. `*` can match multiple characters\n"
-    "  -e, --exclude <path>    : exclude directory.\n"
-    "      --no-exclude        : do not exclude any path\n"
-    "  -h, --help              : show help\n\n"
-    "  --print-config          : show configuration\n\n"
+    "                            `access`, or `modification` (default: modification).\n"
+    "  -D, --depth <int>       : maximum depth of search.\n"
+    "  -r, --reverse           : reverse the order.\n"
+    "      --fzf               : show in fzf.\n"
+    "      --color             : colorize output name.\n"
+    "  -T, --threads <int>     : specify the number of threads (default: " DEFAULT_THREADS_NUMBER_STR "),\n"
+    "                            high value may not be faster.\n"
+    "  -I, --inc-max-fd        : increase the maximum number of files descriptors opened\n"
+    "                            at the same time (may be necessary with lot of threads).\n"
+    "  -e, --exclude <path>    : exclude directory. `*` match multiple characters, and `?` match one.\n"
+    "      --no-exclude        : do not exclude any path.\n"
+    "      --print-config      : show configuration.\n"
+    "      --no-config         : do not use config file.\n"
+    "  -h, --help              : show help.\n\n"
 
     "config file (default: `"CONFIG_FILE"`):\n"
-    "  -each line corresponds to an options (and has to start with `-`)\n"
-    // "  findrecent/"CONFIG_EXCLUDE"    : each line corresponds to a directory\n"
-    "  commentary are marked with `#`\n\n"
+    "  each line corresponds to an options (and has to start with `-`).\n"
+    "  commentary are marked with `#`.\n"
 
     // "fzf commands:\n"
     // "  ctrl+r  : reload\n"
     // "  enter   : select the entry, show git changes if possible\n"
     // option pour activer .git ou bat
-    );
+    , program_name);
 }
 
 static
@@ -110,7 +133,7 @@ struct arguments default_arguments()
       .max_depth    = UINT32_MAX,
       },
     .main_directory = local_directory,
-    .threads        = 3,
+    .threads        = DEFAULT_THREADS_NUMBER,
     .reverse_order  = false,
     .fzf            = false,
     .color          = false,
@@ -119,6 +142,7 @@ struct arguments default_arguments()
 
     .parsing_failed = false,
     .print_config   = false,
+    .no_config      = false,
     .exclude_list_count = 0,
     .exclude_list_capa  = INTIAL_EXCLUDE_LIST_SIZE
   };
@@ -147,6 +171,11 @@ void push_exclude_path(struct arguments *arguments, const char* path)
     if(*cur == '*')
       while(cur[1] == '*') cur++;
   }
+  if(len==1 && *buf == '*'){
+    fprintf(stderr, "cannot exclude a single star operator: `%s`\n", path);
+    arguments->parsing_failed = true;
+    return;
+  }
   buf[len++] = '\0';
   
   uint32_t *count = &arguments->exclude_list_count;
@@ -167,13 +196,13 @@ void parse_arg(struct arguments *arguments, int arg)
 {
   switch (arg)
   {
-    case 'F': // find-files
+    case TOK_FIND_FILES: // find-files
       arguments->options.search_type = SEARCH_FILES;
       break;
-    case 'D': // find-directories
+    case TOK_FIND_DIRECTORIES: // find-directories
       arguments->options.search_type = SEARCH_DIRECTORIES;
       break;
-    case 't': // date-type
+    case TOK_DATE_TYPE: // date-type
       if(!strncmp(optarg, "access", strlen(optarg)))
         arguments->options.date_type = DATE_ACCESS;
       else if(!strncmp(optarg, "creation", strlen(optarg)))
@@ -183,36 +212,44 @@ void parse_arg(struct arguments *arguments, int arg)
       else
         fprintf(stderr, "bad argument for date-type: `%s`\n", optarg);
       break;
-    case 'd': // depth
-      arguments->options.max_depth = atoi(optarg); 
-      break;
-    case 'r': // reverse
+    case TOK_REVERSE: // reverse
       arguments->reverse_order = !arguments->reverse_order; 
       break;
-    case 'f': // fzf
+    case TOK_DEPTH: // depth
+      arguments->options.max_depth = atoi(optarg); 
+      break;
+    case TOK_FZF: // fzf
       arguments->fzf = true;
       break;
-    case 'c': // color
+    case TOK_COLOR: // color
       arguments->color = true;
       break;
-    case 'T': // threads
+    case TOK_THREADS: // threads
       arguments->threads = atoi(optarg);
       break;
-    case 'i': // inc-max-fd
+    case TOK_INC_MAX: // inc-max-fd
       arguments->inc_max_fd = true;
       break;
-    case 'e': // exclude
+    case TOK_EXCLUDE: // exclude
       push_exclude_path(arguments, optarg);
       break;
-    case 'E': // no-exclude
+    case TOK_NO_EXCLUDE: // no-exclude
       arguments->no_exclude = true;
       break;
-    case 'h': // help
-      print_help();
-      exit(0);
-    case 'P':
+    case TOK_PRINT_CONFIG: // help
       arguments->print_config = true;
       break;
+    case TOK_NO_CONFIG: // remove config file
+      if(!arguments->no_config){
+        free(arguments->options.exclude_list);
+        *arguments = default_arguments();
+        arguments->no_config = true;
+        optind = 0; // reset getopt once
+      }
+      break;
+    case TOK_HELP:
+      print_help();
+      exit(0);
   }
 }
 
@@ -326,7 +363,7 @@ void parse_config_files(struct arguments *arguments)
 
     // process arguments
     while(1) {
-      int arg = getopt_long_only(config_argc, config_argv, "FDt:d:rfce:h", long_options, NULL);
+      int arg = getopt_long_only(config_argc, config_argv, SHORTOPT_STR, long_options, NULL);
       if(arg == -1)
         break;
       else if(arg == '?'){
@@ -340,10 +377,13 @@ void parse_config_files(struct arguments *arguments)
     munmap(config_raw, stat.st_size*sizeof(char));
     close(fd);
   }
+
+  arguments->no_config = false; // prevent to not be able to use no_config via arguments in case it was put in the config file.
 }
 
 struct parsed_options parse_options(int argc, char** argv)
 {
+  program_name = *argv;
   struct arguments arguments = default_arguments();
   
   // process config file
@@ -355,7 +395,7 @@ struct parsed_options parse_options(int argc, char** argv)
 
   // process arguments
   while(1) {
-    int arg = getopt_long_only(argc, argv, "FDt:d:rfce:h", long_options, NULL);
+    int arg = getopt_long_only(argc, argv, SHORTOPT_STR, long_options, NULL);
     if(arg == -1)
       break;
     else if(arg == '?')
@@ -364,7 +404,7 @@ struct parsed_options parse_options(int argc, char** argv)
   }
 
   // post process
-  if (optind < argc-1) {
+  if (optind < argc-1) { // reset getopt
     fprintf(stderr, "too many arguments given: ");
     while (optind < argc)
       fprintf (stderr, "`%s` ", argv[optind++]);
@@ -386,7 +426,7 @@ struct parsed_options parse_options(int argc, char** argv)
     exit(1);
   } 
 
-  omp_set_num_threads(arguments.threads); // 3 best ?
+  omp_set_num_threads(arguments.threads);
   
   if(arguments.inc_max_fd) {
     // increase maximum number of file descriptor opened at the same time. prevent crash when there are to many threads 

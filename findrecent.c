@@ -9,10 +9,11 @@ struct linux_dirent64 {
 };
 
 static struct list_entries init_list_entries();
-static void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *options);
+static void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *restrict options, const size_t depth);
+static inline bool match(const char *pattern, const char *str);
+static inline bool is_path_excluded(char* exclude_list, const char* filename);
 
-
-struct list_entries findrecent(char *directory, const struct options *options)
+struct list_entries findrecent(char *restrict directory, const struct options *restrict options)
 {
   int nb_threads = omp_get_max_threads();
   struct list_task lt;
@@ -23,9 +24,14 @@ struct list_entries findrecent(char *directory, const struct options *options)
   int fd = open64(directory, OPEN_FLAGS);
   check(fd);
   
+  struct stat64 s;
+  int ret = fstatat64(fd, directory, &s, 0);
+  check(ret);
+
   // remove a '/' when necessary to get the same output as 'find'
   size_t len = strlen(directory)-1;
   if(len > 1 && directory[len] == '/') directory[len] = '\0'; 
+  if(*directory == '/') *directory = '\0'; // remove supernumenary '/' at the start
   
   struct filename *path;
   switch(options->search_type)
@@ -34,7 +40,7 @@ struct list_entries findrecent(char *directory, const struct options *options)
       path = push_buffer_filename(&lt.l[0], NULL, directory);
     break; 
     case SEARCH_DIRECTORIES:
-      push_entry(&lt.l[0], directory, fd, NULL, options->date_type);
+      push_entry(&lt.l[0], directory, NULL, &s, options->date_type);
       path = lt.l[0].entries[0].name;
     break;
   }
@@ -42,7 +48,7 @@ struct list_entries findrecent(char *directory, const struct options *options)
   #pragma omp parallel
   #pragma omp single
   {
-    findrecent_work(&lt, fd, path, options);
+    findrecent_work(&lt, fd, path, options, 0);
   }
 
   struct list_entries l = merge_sort_list_task(&lt, nb_threads);
@@ -50,78 +56,10 @@ struct list_entries findrecent(char *directory, const struct options *options)
   return l;
 }
 
-// static inline
-// bool is_path_excluded(char* exclude_list, const char* filename)
-// {
-//   if(!strcmp(filename, ".") || !strcmp(filename, "..")) return true;
-  
-//   char* cur = exclude_list;
-//   while(*cur != '\0'){
-//     size_t len = strlen(cur);
-//     if(!strncmp(filename, cur, len)) {
-//       return true;
-//     }
-//     cur += len + 1;
-//   }
-//   return false;
-// }
-
-// check star
-static inline
-bool is_path_excluded(char* exclude_list, const char* filename)
+void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *restrict options, const size_t depth)
 {
-  if(!strcmp(filename, ".") || !strcmp(filename, "..")) return true;
-
-#if 0
-  char* cur_exclude = exclude_list;
-  while(*cur_exclude != '\0'){
-    size_t len_cur = strlen(cur_exclude);
-    size_t len = (len_cur > strlen(filename)) ? len_cur : strlen(filename);
-    
-    fwrite(cur_exclude, sizeof(char), len_cur, stdout);
-    printf("\t%s %25s\n", filename, !strncmp(filename, cur_exclude, len) ? "--> \033[1;31mKILL\033[0;0m" : "");
-
-    if(!strncmp(filename, cur_exclude, len)) {
-      return true;
-    }
-    cur_exclude += len_cur + 1;
-  }
-  return false;
-#else
-  char* exclude = exclude_list;
-  while(*exclude != '\0'){
-    const char *cur_filename = filename;
-    char *cur_exclude = exclude;
-
-    while(*cur_filename == *cur_exclude){
-      if(*cur_exclude == '*')
-      {
-        unfinished
-      }
-      cur_exclude++;
-      cur_filename++;
-      if(*cur_filename == '\0' && *cur_exclude == '\0'){
-    printf("`");
-    fwrite(exclude, sizeof(char), strlen(exclude), stdout);
-    printf("`\t`%s` --> \033[1;31mMATCH\033[0;0m\n", filename);
-        return true;
-      }
-    } // failed to match, try next excluded
-
-    printf("`");
-    fwrite(exclude, sizeof(char), strlen(exclude), stdout);
-    printf("`\t`%s`\n", filename);
-
-    exclude += strlen(exclude) + 1;
-  }
-  return false;
-
-#endif
-}
-
-void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *options)
-{
-  char buf[GETDENTS_BUFSIZE];
+  char buf[GETDENTS_BUFSIZE]; // maybe change for heap allocation, because if depth when to high, it may go stask overflow
+  if(depth > options->max_depth) return;
 
   struct list_entries *l = &lt->l[omp_get_thread_num()];
 
@@ -138,17 +76,38 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
       
       if(is_path_excluded(options->exclude_list, filename)) continue;
 
-      if(d->d_type == options->search_type){
-        push_entry(l, filename, fd, path, options->date_type);
-      }
-      if(d->d_type == DT_DIR)
-      {
-        struct filename *nextpath = push_buffer_filename(l, path, filename);
-        int newfd = openat64(fd, filename, OPEN_FLAGS);
-        check(newfd);
-        
-        #pragma omp task
-        findrecent_work(lt, newfd, nextpath, options);
+      if(d->d_type == options->search_type || d->d_type == DT_DIR){
+        struct stat64 s;
+        int ret = fstatat64(fd, filename, &s, 0);
+        // check(ret);
+        if(ret < 0) { 
+          // ignore permissions denied
+          if(errno == EACCES || errno == ENOENT) continue; 
+          perror(NULL); exit(1); 
+        }
+
+
+        if(d->d_type == options->search_type){
+          push_entry(l, filename, path, &s, options->date_type);
+        }
+        if(d->d_type == DT_DIR)
+        {
+          struct filename *nextpath = push_buffer_filename(l, path, filename);
+          int newfd = openat64(fd, filename, OPEN_FLAGS);
+          if(newfd < 0) { 
+            // ignore permissions denied
+            if(errno == EACCES || errno == ENOENT) continue; 
+            perror(NULL); exit(1); 
+          }
+          
+          if(s.st_nlink >= TASK_LINKS_THRESHOLD){
+            #pragma omp task
+            findrecent_work(lt, newfd, nextpath, options, depth+1);
+          }
+          else{
+            findrecent_work(lt, newfd, nextpath, options, depth+1);
+          }
+        }
       }
     }
 
@@ -175,4 +134,45 @@ struct list_entries init_list_entries()
   (*buffer->b)->n = 0;
 
   return l;
+}
+
+bool is_path_excluded(char* exclude_list, const char* filename)
+{
+  if(!strcmp(filename, ".") || !strcmp(filename, "..")) return true;
+
+  char* exclude = exclude_list;
+  while(*exclude != '\0'){
+    if(match(exclude, filename)){
+      return true;
+    }
+
+    exclude += strlen(exclude) + 1;
+  }
+  return false;
+}
+
+// match pattern and str, pattern can countain operators `*` and `?` to match multiple characters
+bool match(const char *pattern, const char *str) {
+  while(*str) {
+    if(*pattern == '*') {
+      pattern++;
+      if(*pattern == '\0')
+        return true;
+      while(*str) {
+        if(match(pattern, str))
+          return true;
+        str++;
+      }
+      return false;
+    }
+    if(*pattern != *str && *pattern != '?')
+        return false;
+    pattern++;
+    str++;
+  }
+
+  if(*pattern == '*')
+    pattern++;
+
+  return *pattern == '\0';
 }

@@ -1,6 +1,6 @@
 #include "defs.h"
 
-void push_entry(struct list_entries *restrict l, const char *restrict filename, int fd, struct filename *restrict pred, enum date_type type)
+void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type)
 {
   size_t n = l->n++;
   if(n >= l->cap) {
@@ -10,21 +10,16 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
   }
 
   struct entry *e = &l->entries[n];
-
-  struct stat64 s;
-  int ret = fstatat64(fd, filename, &s, 0);
-  check(ret);
-
   switch (type)
   {
   case DATE_CREAT:
-    e->date = s.st_ctim; // creation
+    e->date = s->st_ctim; // creation
     break;
   case DATE_ACCESS:
-  e->date = s.st_atim; // last access
+  e->date = s->st_atim; // last access
     break;
   case DATE_MODIF: default:
-  e->date = s.st_mtim; // last modif
+  e->date = s->st_mtim; // last modif
     break;
   }
 
