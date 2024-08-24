@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
 // TODO: color, fzf, depth
 
-  print_list_entry(&l, parsed.reverse_order);  
+  print_list_entry(&l, parsed.reverse_order, parsed.activate_color);  
   free_list_entries(&l);
   if(!parsed.options.exclude_list) 
     free(parsed.options.exclude_list);

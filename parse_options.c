@@ -77,7 +77,7 @@ void print_help()
     "  -D, --depth <int>       : maximum depth of search.\n"
     "  -r, --reverse           : reverse the order.\n"
     "      --fzf               : show in fzf.\n"
-    "      --color             : colorize output name.\n"
+    "      --color             : colorize output name. (toggle on,off)\n"
     "  -T, --threads <int>     : specify the number of threads (default: " DEFAULT_THREADS_NUMBER_STR "),\n"
     "                            high value may not be faster.\n"
     "  -I, --inc-max-fd        : increase the maximum number of files descriptors opened\n"
@@ -222,7 +222,7 @@ void parse_arg(struct arguments *arguments, int arg)
       arguments->fzf = true;
       break;
     case TOK_COLOR: // color
-      arguments->color = true;
+      arguments->color = !arguments->color;
       break;
     case TOK_THREADS: // threads
       arguments->threads = atoi(optarg);

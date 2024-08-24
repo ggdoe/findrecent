@@ -1,4 +1,6 @@
 #include "defs.h"
+#include "color_list.h"
+#include <time.h>
 
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type)
 {
@@ -8,7 +10,8 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
     checkptr(l->entries);
     l->cap *= 2;
   }
-
+// choisir les couleurs ici, strcmp("py", strchr_r(".", filename)) ==> TYPE_PY = "\033[1;31;0m"
+// de meme si IS_EXECUTABLE ==> TYPE_EXEC
   struct entry *e = &l->entries[n];
   switch (type)
   {
@@ -24,6 +27,23 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
   }
 
   e->name = push_buffer_filename(l, pred, filename);
+
+  // color
+  if(s->st_mode & S_IEXEC) {
+    e->color = COLOR_EXEC;
+    return;
+  }
+  char* ext = strrchr(filename, '.');
+  if(ext) {
+    ext += 1; // remove '.'
+    for(size_t i=0; i<sizeof_color_list; i++) {
+      if(!strcmp(ext, color_list[i].ext)){
+        e->color = i;
+        return;
+      }
+    }
+  }
+  e->color = COLOR_DEFAULT;
 }
 
 static
@@ -37,13 +57,29 @@ void print_filename(struct filename *f)
   printf("/%s", f->name);
 }
 
-void print_list_entry(struct list_entries *l, bool reverse_order)
+static inline
+void print_date(struct entry *e)
+{
+  const size_t fixed_length = 27;
+  struct tm *tm = localtime(&e->date.tv_sec);
+  char buffer[64];
+  // strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm);
+  strftime(buffer, sizeof(buffer), "%c", tm);
+  for(size_t i=strlen(buffer); i<fixed_length; i++)
+    buffer[i] = ' ';
+  buffer[fixed_length] = '\0';
+  printf("%s", buffer);
+}
+
+void print_list_entry(struct list_entries *l, bool reverse_order, bool activate_color)
 {
   size_t n = l->n;
   for(size_t i=0; i<n; i++){
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
+    print_date(e);
+    if(activate_color) printf("\033[%sm", color_list[e->color].color);
     print_filename(e->name);
-    printf("\t%lu.%lu", e->date.tv_sec, e->date.tv_nsec);
+    if(activate_color) printf("\033[0m");
     putchar('\n');
   }
 }

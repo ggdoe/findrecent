@@ -1,3 +1,5 @@
+#ifndef _DEFS_H_
+#define _DEFS_H_
 #define _GNU_SOURCE
 #include <unistd.h>
 #include <fcntl.h>
@@ -40,6 +42,7 @@ struct filename{
 struct entry {
   struct timespec date;
   struct filename *name;
+  size_t color;
 };
 
 struct list_entries {
@@ -82,9 +85,11 @@ struct parsed_options
 
 struct list_entries findrecent(char *restrict directory, const struct options *restrict options);
 struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads);
-void print_list_entry(struct list_entries *l, bool reverse_order);
+void print_list_entry(struct list_entries *l, bool reverse_order, bool activate_color);
 void free_list_entries(struct list_entries *l);
 struct filename *push_buffer_filename(struct list_entries *restrict l, struct filename *restrict pred, const char *restrict name);
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type);
 
 struct parsed_options parse_options(int argc, char** argv);
+
+#endif // _DEFS_H_

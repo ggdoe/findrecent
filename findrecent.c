@@ -86,7 +86,6 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
           perror(NULL); exit(1); 
         }
 
-
         if(d->d_type == options->search_type){
           push_entry(l, filename, path, &s, options->date_type);
         }
@@ -151,7 +150,7 @@ bool is_path_excluded(char* exclude_list, const char* filename)
   return false;
 }
 
-// match pattern and str, pattern can countain operators `*` and `?` to match multiple characters
+// match 'pattern' and 'str', 'pattern' can countain operators `*` and `?` to match multiple characters
 bool match(const char *pattern, const char *str) {
   while(*str) {
     if(*pattern == '*') {
