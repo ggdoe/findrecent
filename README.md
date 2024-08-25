@@ -3,4 +3,5 @@
 - search files and sort them
 
 - with fzf support:
-![image](https://github.com/user-attachments/assets/493ff465-4baf-4b07-bc69-305fafdd37b2)
+
+![image](https://github.com/user-attachments/assets/18061252-a22b-491c-a464-6316335c4b96)
