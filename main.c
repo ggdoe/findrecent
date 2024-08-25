@@ -1,10 +1,5 @@
 #include "defs.h"
 
-// #define BENCH_fd stderr
-// #define BENCH_PRECISION ms
-// #define BENCH_LOG_SIZE 1
-// #include "bench.h"
-
 int main(int argc, char** argv)
 {
   struct parsed_options options = parse_options(argc, argv);
