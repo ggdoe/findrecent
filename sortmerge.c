@@ -24,7 +24,7 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
   checkptr(l.buffer.b);
   l.buffer.n = nb_buffer;
 
-#if 0 // merge then qsort (slower?)
+#if 1 // merge then qsort (slower?)
   int cur_b=0, cur_e=0;
   for(int i=0; i<nb_threads; i++) {
     const size_t nb = ll[i].buffer.n;
