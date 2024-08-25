@@ -32,9 +32,9 @@ void launch_in_fzf(char** argv, struct parsed_options *options)
   fill_preview_cmd(preview_cmd, options);
   fill_reload_cmd(reload_cmd, cmd_argv);
   fill_select_cmd(select_cmd, options);
+  setenv("FZF_DEFAULT_COMMAND", cmd_argv, 1);
 
   // launch fzf
-  setenv("FZF_DEFAULT_COMMAND", cmd_argv, 1);
   if(execvp(fzf_argv[0], fzf_argv) < 0)
     perror("error durring fzf launch.");
   exit(1); // unreachable

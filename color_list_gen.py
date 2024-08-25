@@ -19,15 +19,21 @@ forgiven_character="{}[]*,"
 manual_entries=[
   ("cu",   "38;5;42",  "// CUDA"),
   ("conf", "38;5;243", "// config files"),
-  ("c", "38;5;243", "// present"),
 ]
 entry_exec=["EXEC", "1;91"]; exec_str=("EXEC", "ex")
 entry_default=["", "0"]
 
+def firstchar(s):
+  for c in s:
+    if c != ' ' and c != '\t':
+      return c
+  return ''
+
 ## setup list_color
 if not USE_REMOTE_LS_COLORS:
   for line in os.getenv("LS_COLORS").split(':'):
-    if line == '': continue
+    fc = firstchar(line)
+    if fc == '' or fc == '#': continue
     splitted = line.split("=", maxsplit=2)
     if line[1] == '.':
       splitted[0] = splitted[0][2:]
@@ -35,11 +41,12 @@ if not USE_REMOTE_LS_COLORS:
         continue
       list_color.append(splitted)
       len_max = list(map(max, map(len, splitted), len_max))
-    elif line.removeprefix(' ')[0] != '#' and any(e in line for e in exec_str):
+    elif any(e in line for e in exec_str):
       entry_exec[1] = splitted[1]
 else:
   for line in requests.get(remote_ls_colors).iter_lines(decode_unicode=True):
-    if line == '': continue
+    fc = firstchar(line)
+    if fc == '' or fc == '#': continue
     splitted = line.split(maxsplit=2)
     if line[0] == '.':
       if any(c in splitted[0] for c in forgiven_character):
@@ -47,12 +54,14 @@ else:
       splitted[0] = splitted[0][1:]
       list_color.append(splitted)
       len_max = list(map(max, map(len, splitted), len_max))
-    elif line.removeprefix(' ')[0] != '#' and any(e in line for e in exec_str):
+    elif any(e in line for e in exec_str):
       entry_exec = line.split(maxsplit=2)
 
 ## gen from file "LS_COLORS"
 # file = open("LS_COLORS", "r")
 # for line in file:
+#   fc = firstchar(line)
+#   if fc == '' or fc == '#': continue
 #   splitted = line.split(maxsplit=2)
 #   if line[0] == '.':
 #     if any(c in splitted[0] for c in forgiven_character):
@@ -60,7 +69,7 @@ else:
 #     splitted[0] = splitted[0][1:]
 #     list_color.append(splitted)
 #     len_max = list(map(max, map(len, splitted), len_max))
-#   elif line.removeprefix(' ')[0] != '#' and any(e in line for e in exec_str):
+#   elif any(e in line for e in exec_str):
 #     entry_exec = line.split(maxsplit=2)
 # file.close()
 
@@ -118,5 +127,4 @@ print("done: ", output_file)
 # for entry in list_color:
 #   print(pusher(*entry), end='')
 # print(footer, end='')
-
 

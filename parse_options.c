@@ -78,11 +78,11 @@ void print_help()
 
     "config file (default: `"CONFIG_FILE"`):\n"
     "  each line corresponds to an options (and has to start with `-`).\n"
-    "  commentary are marked with `#`.\n"
+    "  commentary are marked with `#`.\n\n"
 
-    // "fzf commands:\n"
-    // "  ctrl+r  : reload\n"
-    // "  enter   : select the entry, show git changes if possible\n"
+    "fzf commands:\n"
+    "  ctrl+r  : reload\n"
+    "  enter   : select the entry, execute option `fzf-select`.\n"
     , program_name);
 }
 
@@ -260,9 +260,11 @@ void parse_arg(struct parsed_options *options, int arg)
       break;
     case TOK_NO_CONFIG: // remove config file
       if(!options->no_config){
+        const bool parsing_failed = options->parsing_failed;
         free(options->options.exclude_list);
         *options = default_options();
         options->no_config = true;
+        options->parsing_failed = parsing_failed;
         optind = 0; // reset getopt once
       }
       break;
@@ -306,96 +308,102 @@ void parse_config_files(struct parsed_options *options)
     strcpy(config_file, CONFIG_FILE);
 
   int fd = open(config_file, O_RDWR);
-  if(fd>=0)
-  {
-    struct stat64 stat;
-    fstat64(fd, &stat);
-    char* config_raw = (char*) mmap64(NULL, (stat.st_size+2)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    config_raw[stat.st_size] = '\n';
-    config_raw[stat.st_size+1] = '\0';
-    int config_capa = 32, config_argc = 1;
-    char** config_argv = (char**)malloc(config_capa * sizeof(char*));
-    config_argv[0] = config_raw; // dummy argv[0] 
+  if(fd<0) return;
 
-    // remove comments
-    for(char* cur=config_raw; *cur != '\0'; cur++){
-      if(*cur == '#')
-        while(*cur != '\n' && *cur != '\0'){
-          *cur = ' ';
-          cur++;
-        }
-    }
+  struct stat64 stat;
+  fstat64(fd, &stat);
+  if(stat.st_size == 0) return; // empty file
+  char* config_raw = (char*) mmap64(NULL, (stat.st_size+2)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  config_raw[stat.st_size] = '\n';
+  config_raw[stat.st_size+1] = '\0';
+  int config_capa = 32, config_argc = 1;
+  char** config_argv = (char**)malloc(config_capa * sizeof(char*));
+  config_argv[0] = config_raw; // dummy argv[0] 
 
-    // verify validity
-    {
-      int line = 0;
-      for(char* cur=config_raw; *cur != '\0';){
-        while(*cur == ' ' || *cur == '\t') cur++;
-
-        int len = 0;
-        while(!(cur[len] == '\n' || cur[len] == '\0')) len++;
-        line++;
-
-        if(*cur != '-' && *cur != '\n'){
-          fprintf(stderr, "command error line %d: ", line);
-          fwrite(cur, sizeof(char), len, stderr);
-          fprintf(stderr, "\n");
-          options->parsing_failed = true;
-        }
-        cur += len+1;
+  // remove comments
+  for(char* cur=config_raw; *cur != '\0'; cur++){
+    if(*cur == '#')
+      while(*cur != '\n' && *cur != '\0'){
+        *cur = ' ';
+        cur++;
       }
-      if(options->parsing_failed){
-        fprintf(stderr, "error parsing `"CONFIG_FILE"`, commands has to start with `-`.\n");
-      }
-    }
-
-    // fill argv to use getopt
-    for(char* cur=config_raw; *cur != '\0';){
-      while(*cur == ' ' || *cur == '\t' || *cur == '\n') cur++;
-
-      char* quote_end = parsing_quote(cur);
-      if(!quote_end){
-        fprintf(stderr, "error parsing `"CONFIG_FILE"`, unfinished quote: %s\n", cur);
-        options->parsing_failed = true;
-      }
-      else if(cur != quote_end){
-        if(!(*quote_end == ' ' || *quote_end == '\t' || *quote_end == '\n' || *quote_end == '\0')){
-          *(quote_end - 1) = *(quote_end - 2);
-          fprintf(stderr, "error parsing `"CONFIG_FILE"`, missing space after quote: %s\n", cur);
-          options->parsing_failed = true;
-        }
-        config_argv[config_argc++] = cur+1; // ignore the quote symbol
-        cur = quote_end;
-      }
-      else
-        config_argv[config_argc++] = cur;
-
-      while(!(*cur == ' ' || *cur == '\t' || *cur == '\n' || *cur == '\0')) cur++;
-      *cur++ = '\0';  
-      
-      if(config_argc >= config_capa){
-        config_capa *= 2;
-        config_argv = (char**)realloc(config_argv, config_capa * sizeof(char*));
-      }
-    }
-    config_argv[--config_argc] = NULL;
-
-    // process options
-    while(1) {
-      int arg = getopt_long_only(config_argc, config_argv, SHORTOPT_STR, long_options, NULL);
-      if(arg == -1)
-        break;
-      else if(arg == '?'){
-        options->parsing_failed = true;
-      }
-      parse_arg(options, arg);
-    }
-    optind=0; // reset getopt for next use of getopt
-
-    free(config_argv);
-    munmap(config_raw, stat.st_size*sizeof(char));
-    close(fd);
   }
+
+  // verify validity
+  {
+    int line = 0;
+    for(char* cur=config_raw; *cur != '\0';){
+      while(*cur == ' ' || *cur == '\t') cur++;
+
+      int len = 0;
+      while(!(cur[len] == '\n' || cur[len] == '\0')) len++;
+      line++;
+
+      if(*cur != '-' && *cur != '\n'){
+        fprintf(stderr, "command error line %d: ", line);
+        fwrite(cur, sizeof(char), len, stderr);
+        fprintf(stderr, "\n");
+        options->parsing_failed = true;
+      }
+      cur += len+1;
+    }
+    if(options->parsing_failed){
+      fprintf(stderr, "error parsing `"CONFIG_FILE"`, commands has to start with `-`.\n");
+    }
+  }
+
+  // fill argv to use getopt
+  for(char* cur=config_raw; *cur != '\0';){
+    while(*cur == ' ' || *cur == '\t' || *cur == '\n') cur++;
+
+    char* quote_end = parsing_quote(cur);
+    // printf("%c %c %d\n", *cur, *quote_end, quote_end[1]);
+    if(!quote_end){
+      fprintf(stderr, "error parsing `"CONFIG_FILE"`, unfinished quote: %s\n", cur);
+      options->parsing_failed = true;
+    }
+    else if(cur != quote_end) { // there is a quote
+      if(!(*quote_end == ' ' || *quote_end == '\t' || *quote_end == '\n' || *quote_end == '\0')){
+        // *(quote_end - 1) = *(quote_end - 2);
+        // *(quote_end - 1) = *cur;
+        fprintf(stderr, "error parsing `"CONFIG_FILE"`, missing space after quote: %s\n", cur);
+        options->parsing_failed = true;
+      }
+      // config_argv[config_argc++] = cur+1; // ignore the quote symbol
+      cur = quote_end;
+    }
+    else // there is no quote
+      config_argv[config_argc++] = cur;
+
+    cur = cur + strcspn(cur, " \t\n");
+    // while(!(*cur == ' ' || *cur == '\t' || *cur == '\n' || *cur == '\0')) cur++;
+    *cur++ = '\0';  
+    
+    // printf("%s\n", config_argv[config_argc-1]);
+
+    if(config_argc >= config_capa){
+      config_capa *= 2;
+      config_argv = (char**)realloc(config_argv, config_capa * sizeof(char*));
+    }
+  }
+  config_argv[--config_argc] = NULL;
+// exit(0); todo debug cette partie
+
+  // process options
+  while(1) {
+    int arg = getopt_long_only(config_argc, config_argv, SHORTOPT_STR, long_options, NULL);
+    if(arg == -1)
+      break;
+    else if(arg == '?'){
+      options->parsing_failed = true;
+    }
+    parse_arg(options, arg);
+  }
+  optind=0; // reset getopt for next use of getopt
+
+  free(config_argv);
+  munmap(config_raw, stat.st_size*sizeof(char));
+  close(fd);
 
   options->no_config = false; // prevent to not be able to use no_config via options in case it was put in the config file.
 }
