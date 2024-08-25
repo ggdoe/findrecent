@@ -2,6 +2,8 @@
 #ifndef _COLOR_LIST_H_
 #define _COLOR_LIST_H_
 
+#define DIR_COLOR_FUNCTION(n)  (8 + 17 * n)
+
 struct color_map {
   const char* ext; 
   const char* color;

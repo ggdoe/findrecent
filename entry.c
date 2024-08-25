@@ -1,6 +1,6 @@
 #include "defs.h"
-#include "color_list.h"
 #include <time.h>
+#include "color_list.h"
 
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type)
 {
@@ -10,8 +10,7 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
     checkptr(l->entries);
     l->cap *= 2;
   }
-// choisir les couleurs ici, strcmp("py", strchr_r(".", filename)) ==> TYPE_PY = "\033[1;31;0m"
-// de meme si IS_EXECUTABLE ==> TYPE_EXEC
+
   struct entry *e = &l->entries[n];
   switch (type)
   {
@@ -57,12 +56,25 @@ void print_filename(struct filename *f)
   printf("/%s", f->name);
 }
 
+static
+int print_dirname_color(struct filename *f, int depth)
+{
+  if(f->pred == NULL){
+    printf("%s", f->name);
+    return (uint8_t)(DIR_COLOR_FUNCTION(depth)); // color code in function of depth max
+  }
+  const uint8_t color_val = print_dirname_color(f->pred, depth+1);
+  printf("\033[38;5;%dm/%s", color_val, f->name);
+
+  return color_val;
+}
+
 static inline
 void print_date(struct entry *e)
 {
+  char buffer[32];
   const size_t fixed_length = 27;
   struct tm *tm = localtime(&e->date.tv_sec);
-  char buffer[64];
   // strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm);
   strftime(buffer, sizeof(buffer), "%c", tm);
   for(size_t i=strlen(buffer); i<fixed_length; i++)
@@ -71,16 +83,26 @@ void print_date(struct entry *e)
   printf("%s", buffer);
 }
 
-void print_list_entry(struct list_entries *l, bool reverse_order, bool activate_color)
+void print_list_entry(struct list_entries *restrict l, struct parsed_options *restrict options)
 {
+  const bool reverse_order = options->reverse_order;
+  const bool activate_color = options->color;
+  const enum search_type search_type = options->options.search_type;
   size_t n = l->n;
+
   for(size_t i=0; i<n; i++){
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     print_date(e);
-    if(activate_color) printf("\033[%sm", color_list[e->color].color);
-    print_filename(e->name);
-    if(activate_color) printf("\033[0m");
-    putchar('\n');
+    if(activate_color && search_type == SEARCH_DIRECTORIES) {
+      print_dirname_color(e->name, 0);
+      printf("\033[0m\n");
+    }
+    else {
+      if(activate_color) printf("\033[%sm", color_list[e->color].color);
+      print_filename(e->name);
+      if(activate_color) printf("\033[0m");
+      putchar('\n');
+    }
   }
 }
 

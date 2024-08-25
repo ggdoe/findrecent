@@ -5,6 +5,10 @@ import numpy as np
 import requests
 output_file="./color_list.h"
 
+color = lambda c: f"\033[38;5;{c}m"
+color_end = "\033[0m"
+dir_color_function = "8 + 17 * n"
+
 # use local $LS_COLOR or wget it from the web (https://github.com/trapd00r/LS_COLORS)
 USE_REMOTE_LS_COLORS = True
 remote_ls_colors="https://raw.githubusercontent.com/trapd00r/LS_COLORS/master/LS_COLORS" # nice
@@ -68,6 +72,8 @@ for e in manual_entries:
 header = """// Generated""" + ( f" from: {remote_ls_colors}" if USE_REMOTE_LS_COLORS else "") + """
 #ifndef _COLOR_LIST_H_
 #define _COLOR_LIST_H_
+
+#define DIR_COLOR_FUNCTION(n)  (""" + dir_color_function + """)
 
 struct color_map {
   const char* ext; 

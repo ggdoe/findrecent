@@ -12,7 +12,7 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
   size_t nb_buffer = 0;
   for(int i=0; i<nb_threads; i++) {
     nb_entries += ll[i].n;
-    nb_buffer  += ll[i].buffer.n; // TODO: remove ce +1 chiant...
+    nb_buffer  += ll[i].buffer.n;
   }
 
   l.entries = (struct entry*) malloc(nb_entries * sizeof(struct entry));
@@ -64,11 +64,11 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
 
 int cmp_date(const void *p1, const void *p2)
 {
-  const struct entry *e1 = p2;
-  const struct entry *e2 = p1;
+  const struct entry *e1 = p1;
+  const struct entry *e2 = p2;
 
-  const long s = e1->date.tv_sec - e2->date.tv_sec;
-  return s;
+  const long
+   s = e1->date.tv_sec - e2->date.tv_sec;
   if (s != 0) return s;
   return e1->date.tv_nsec - e2->date.tv_nsec;
 }
@@ -81,20 +81,20 @@ void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_t
   }
 
   #define get_entry(i) &ll[i].entries[ll[i].n]
-  struct entry maximum_value = {.date={__UINT64_MAX__, __UINT64_MAX__}, .name=NULL};
+  struct entry minimum_value = {.date={0, 0}, .name=NULL};
   
   for(size_t cur=0; cur<l->n; cur++) {
-    struct entry *minval = &maximum_value;
+    struct entry *maxval = &minimum_value;
     size_t argmin = 0;
     for(int i=0; i<nb_threads; i++) {
       if(ll[i].n >= ll[i].cap) continue;
       struct entry *curval = get_entry(i);
-      if(cmp_date(curval, minval)<0) {
-        minval = curval;
+      if(cmp_date(curval, maxval)>0) {
+        maxval = curval;
         argmin = i;
       }
     }
-    l->entries[cur] = *minval;
+    l->entries[cur] = *maxval;
     ll[argmin].n++;
   }
   #undef get_entry
