@@ -188,12 +188,12 @@ void push_exclude_path(struct parsed_options *options, const char* path)
   (*exclude_list)[*count] = '\0';
 }
 
-#define IF_ARG_MATCH(opt, match, val)                     \
-    if(!strncmp(optarg, match, strlen(optarg))) opt = val;
-
 static inline
 void parse_arg(struct parsed_options *options, int arg)
 {
+  #define IF_ARG_MATCH(opt, match, val)                     \
+      if(!strncmp(optarg, match, strlen(optarg))) opt = val;
+
   switch (arg)
   {
     case TOK_FIND_FILES: // find-files
@@ -274,25 +274,6 @@ void parse_arg(struct parsed_options *options, int arg)
   }
 }
 
-static inline
-char* parsing_quote(char* str)
-{
-  char quote = *str;
-  if(quote == '"' || quote == '\''){
-    for(char* c=str+1;; c++) {
-      if(*c == '\n' || *c == '\0'){
-        *c = '\0';
-        return NULL;
-      }
-      else if(*c == quote){
-        *c = '\0';
-        return c+1;
-      }
-    }
-  }
-  return str;
-}
-
 static
 void parse_config_files(struct parsed_options *options)
 {
@@ -314,13 +295,13 @@ void parse_config_files(struct parsed_options *options)
   fstat64(fd, &stat);
   if(stat.st_size == 0) return; // empty file
   char* config_raw = (char*) mmap64(NULL, (stat.st_size+2)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-  config_raw[stat.st_size] = '\n';
+  config_raw[stat.st_size] = '\0';
   config_raw[stat.st_size+1] = '\0';
-  int config_capa = 32, config_argc = 1;
+  int config_capa = 32, config_argc = 0;
   char** config_argv = (char**)malloc(config_capa * sizeof(char*));
-  config_argv[0] = config_raw; // dummy argv[0] 
+  config_argv[config_argc] = config_raw; // dummy argv[0] 
 
-  // remove comments
+  // remove comments by filling space
   for(char* cur=config_raw; *cur != '\0'; cur++){
     if(*cur == '#')
       while(*cur != '\n' && *cur != '\0'){
@@ -329,66 +310,42 @@ void parse_config_files(struct parsed_options *options)
       }
   }
 
-  // verify validity
+  // fill argv
   {
-    int line = 0;
-    for(char* cur=config_raw; *cur != '\0';){
-      while(*cur == ' ' || *cur == '\t') cur++;
-
-      int len = 0;
-      while(!(cur[len] == '\n' || cur[len] == '\0')) len++;
-      line++;
-
-      if(*cur != '-' && *cur != '\n'){
-        fprintf(stderr, "command error line %d: ", line);
-        fwrite(cur, sizeof(char), len, stderr);
-        fprintf(stderr, "\n");
-        options->parsing_failed = true;
+    char *saveptr_quote;
+    char *str_quote = config_raw;
+    bool is_inside_quote = false;
+    for(char *token_quote;; str_quote=NULL) {
+      // don't distinguish between different quote symbol, much easier to implement
+      token_quote = strtok_r(str_quote, "'\"", &saveptr_quote);
+      if(token_quote == NULL)
+        break;
+      if(is_inside_quote%2) { // is inside a quote
+        config_argv[++config_argc] = token_quote;
       }
-      cur += len+1;
-    }
-    if(options->parsing_failed){
-      fprintf(stderr, "error parsing `"CONFIG_FILE"`, commands has to start with `-`.\n");
-    }
-  }
+      else { // is not inside a quote
+        char *token = strtok(token_quote, " \t\n"); // split args
+        while(token != NULL) {
+          config_argv[++config_argc] = token;
+          token = strtok(NULL, " \t\n");
 
-  // fill argv to use getopt
-  for(char* cur=config_raw; *cur != '\0';){
-    while(*cur == ' ' || *cur == '\t' || *cur == '\n') cur++;
-
-    char* quote_end = parsing_quote(cur);
-    // printf("%c %c %d\n", *cur, *quote_end, quote_end[1]);
-    if(!quote_end){
-      fprintf(stderr, "error parsing `"CONFIG_FILE"`, unfinished quote: %s\n", cur);
+          // extend config_argv if necessary (keep space for the next quote block and NULL)
+          if(config_argc + 2 > config_capa){
+            config_capa *= 2;
+            config_argv = (char**)realloc(config_argv, config_capa * sizeof(char*));
+          }
+        }
+      }
+      is_inside_quote=!is_inside_quote;
+    }
+    if(!is_inside_quote) {
+      *strchrnul(config_argv[config_argc], '\n') = '\0'; 
+      fprintf(stderr, "error in config file, unfinished quote: %s\n", config_argv[config_argc]);
       options->parsing_failed = true;
     }
-    else if(cur != quote_end) { // there is a quote
-      if(!(*quote_end == ' ' || *quote_end == '\t' || *quote_end == '\n' || *quote_end == '\0')){
-        // *(quote_end - 1) = *(quote_end - 2);
-        // *(quote_end - 1) = *cur;
-        fprintf(stderr, "error parsing `"CONFIG_FILE"`, missing space after quote: %s\n", cur);
-        options->parsing_failed = true;
-      }
-      // config_argv[config_argc++] = cur+1; // ignore the quote symbol
-      cur = quote_end;
-    }
-    else // there is no quote
-      config_argv[config_argc++] = cur;
-
-    cur = cur + strcspn(cur, " \t\n");
-    // while(!(*cur == ' ' || *cur == '\t' || *cur == '\n' || *cur == '\0')) cur++;
-    *cur++ = '\0';  
-    
-    // printf("%s\n", config_argv[config_argc-1]);
-
-    if(config_argc >= config_capa){
-      config_capa *= 2;
-      config_argv = (char**)realloc(config_argv, config_capa * sizeof(char*));
-    }
+    config_argv[++config_argc] = NULL;
   }
-  config_argv[--config_argc] = NULL;
-// exit(0); todo debug cette partie
-
+  
   // process options
   while(1) {
     int arg = getopt_long_only(config_argc, config_argv, SHORTOPT_STR, long_options, NULL);
@@ -398,6 +355,10 @@ void parse_config_files(struct parsed_options *options)
       options->parsing_failed = true;
     }
     parse_arg(options, arg);
+  }
+  if(config_argc != optind){
+    fprintf(stderr, "error in config file, commands has to start with `-`.\n");
+    options->parsing_failed = true;
   }
   optind=0; // reset getopt for next use of getopt
 
@@ -416,7 +377,7 @@ struct parsed_options parse_options(int argc, char** argv)
   // process config file
   parse_config_files(&options);
   if(options.parsing_failed) {
-    fprintf(stderr, "Error parsing the config file `"CONFIG_FILE"`\n");
+    fprintf(stderr, "error in the config file `"CONFIG_FILE"`\n");
     exit(1);
   } 
 
@@ -445,7 +406,7 @@ struct parsed_options parse_options(int argc, char** argv)
     *options.options.exclude_list = '\0';
 
   if(options.parsing_failed) {
-    fprintf(stderr, "Error parsing command line options.\n");
+    fprintf(stderr, "error in command line options.\n");
     exit(1);
   } 
 
