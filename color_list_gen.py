@@ -20,7 +20,7 @@ manual_entries=[
   ("cu",   "38;5;42",  "// CUDA"),
   ("conf", "38;5;243", "// config files"),
 ]
-entry_exec=["EXEC", "1;91"]; exec_str=("EXEC", "ex")
+entry_exec=["", "1;91"]; exec_str=("EXEC", "ex")
 entry_default=["", "0"]
 
 def firstchar(s):
@@ -76,6 +76,9 @@ else:
 for e in manual_entries:
   if any([e[0] == l[0] for l in list_color]):
       manual_entries.remove(e)
+
+entry_exec[0] = ""
+entry_exec[2] = "// executable"
 
 ## setup strings
 header = """// Generated""" + ( f" from: {remote_ls_colors}" if USE_REMOTE_LS_COLORS else "") + """
