@@ -1,5 +1,7 @@
 # findrecent
 
+not finished
+
 - search files and sort them
 
 - with fzf support:
