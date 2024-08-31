@@ -1,6 +1,6 @@
 #include "defs.h"
 #include <time.h>
-#include "color_list.h"
+#include "colormap.h"
 
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type)
 {
@@ -32,17 +32,13 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
     e->color = COLOR_EXEC;
     return;
   }
-  char* ext = strrchr(filename, '.');
-  if(ext) {
-    ext += 1; // remove '.'
-    for(size_t i=0; i<sizeof_color_list; i++) {
-      if(!strcmp(ext, color_list[i].ext)){
-        e->color = i;
-        return;
-      }
-    }
-  }
-  e->color = COLOR_DEFAULT;
+  const char* ext = strrchr(filename, '.'); // search extension
+  if(ext == NULL)
+    ext = filename;
+  else 
+    ext = ext+1;
+  const size_t len = strlen(ext);
+  e->color = get_color(ext, len);
 }
 
 static
@@ -98,7 +94,7 @@ void print_list_entry(struct list_entries *restrict l, struct parsed_options *re
       printf("\033[0m\n");
     }
     else {
-      if(activate_color) printf("\033[%sm", color_list[e->color].color);
+      if(activate_color) printf("\033[%sm", e->color);
       print_filename(e->name);
       if(activate_color) printf("\033[0m");
       putchar('\n');

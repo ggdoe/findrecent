@@ -1,15 +1,16 @@
 #!/bin/sh
 
 # CFLAGS="-flto -Ofast"
-CFLAGS="-flto -O3"
+CFLAGS="-flto -O3 -march=native"
 WFLAGS="-Wall -Wextra -pedantic"
 LFLAGS="-fopenmp"
-SRC="main.c findrecent.c sortmerge.c entry.c buffer.c parse_options.c launch_fzf.c"
-CFLAGS="-g -ggdb $CFLAGS"
+SRC="src/main.c  src/findrecent.c  src/sortmerge.c  src/entry.c  src/buffer.c  src/parse_options.c  src/launch_fzf.c"
+# CFLAGS="-g -ggdb $CFLAGS"
 
 output_name=fr
 install_cmd="ln -s $PWD/$output_name ~/.local/bin/$output_name"
 echo install command: $install_cmd
 
 set -xe
+# ./gen_colormap.sh
 gcc $WFLAGS $CFLAGS $SRC $LFLAGS -o $output_name

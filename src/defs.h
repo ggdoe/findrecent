@@ -42,7 +42,7 @@ struct filename{
 struct entry {
   struct timespec date;
   struct filename *name;
-  size_t color;
+  const char* color;
 };
 
 struct list_entries {

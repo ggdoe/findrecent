@@ -148,8 +148,12 @@ void print_config(struct parsed_options *options)
 static inline
 void push_exclude_path(struct parsed_options *options, const char* path)
 {
+  uint32_t *count = &options->exclude_list_count;
+  uint32_t *capa  = &options->exclude_list_capa;
+  char** exclude_list = &options->options.exclude_list;
   char buf[NAME_MAX];
   size_t len = 0;
+
   for(const char* cur=path;; cur++)
   {
     // trim '/' at the end
@@ -174,10 +178,6 @@ void push_exclude_path(struct parsed_options *options, const char* path)
     return;
   }
   buf[len++] = '\0';
-  
-  uint32_t *count = &options->exclude_list_count;
-  uint32_t *capa  = &options->exclude_list_capa;
-  char** exclude_list = &options->options.exclude_list;
 
   if(*count + len + 1>= *capa){
     *exclude_list = (char*)realloc(*exclude_list, *capa * 2);
@@ -185,7 +185,6 @@ void push_exclude_path(struct parsed_options *options, const char* path)
   }
   memcpy(*exclude_list + *count, buf, len*sizeof(char));
   *count += len;
-  (*exclude_list)[*count] = '\0';
 }
 
 static inline
@@ -294,9 +293,9 @@ void parse_config_files(struct parsed_options *options)
   struct stat64 stat;
   fstat64(fd, &stat);
   if(stat.st_size == 0) return; // empty file
-  char* config_raw = (char*) mmap64(NULL, (stat.st_size+2)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  char* config_raw = (char*) mmap64(NULL, (stat.st_size+1)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   config_raw[stat.st_size] = '\0';
-  config_raw[stat.st_size+1] = '\0';
+  // config_raw[stat.st_size+1] = '\0'; // TODO remove
   int config_capa = 32, config_argc = 0;
   char** config_argv = (char**)malloc(config_capa * sizeof(char*));
   config_argv[config_argc] = config_raw; // dummy argv[0] 
@@ -304,10 +303,8 @@ void parse_config_files(struct parsed_options *options)
   // remove comments by filling space
   for(char* cur=config_raw; *cur != '\0'; cur++){
     if(*cur == '#')
-      while(*cur != '\n' && *cur != '\0'){
-        *cur = ' ';
-        cur++;
-      }
+      while(*cur != '\n' && *cur != '\0')
+        *cur++ = ' ';
   }
 
   // fill argv
@@ -345,6 +342,14 @@ void parse_config_files(struct parsed_options *options)
     }
     config_argv[++config_argc] = NULL;
   }
+
+
+  // TODO rm
+  // for(char** c=config_argv; *c!=NULL; c++)
+  //   printf("%s\n", *c);
+  // // for(int i=0; i<config_argc; i++)
+  // //   printf("%s\n", config_argv[i]);
+  // exit(0);
   
   // process options
   while(1) {
