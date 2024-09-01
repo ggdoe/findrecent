@@ -1,8 +1,10 @@
 # findrecent
 Search files and sort them. Almost as fast as regular find without sort.
 
-![image](https://github.com/user-attachments/assets/18061252-a22b-491c-a464-6316335c4b96)
-
+<div align="center">
+<img width="743" alt="image" src="https://github.com/user-attachments/assets/9702487a-42f8-4857-bc1e-82515f75173d">
+</div>
+  
 ## Build
 Compile all files in src, or execute `./build.sh`. Binary is named by default `fr`.
 
