@@ -26,7 +26,7 @@ struct list_entries findrecent(char *restrict directory, const struct work_optio
   check(fd);
   
   struct stat64 s;
-  int ret = fstatat64(fd, directory, &s, 0);
+  int ret = fstat64(fd, &s);
   check(ret);
 
   // remove a '/' when necessary to get the same output as 'find'

@@ -57,7 +57,7 @@ int print_dirname_color(struct filename *f, int depth)
 {
   if(f->pred == NULL){
     printf("%s", f->name);
-    return (uint8_t)(DIR_COLOR_FUNCTION(depth)); // color code in function of depth max
+    return (uint8_t)(DIR_COLOR_FUNCTION(depth)); // color code is function of depth max
   }
   const uint8_t color_val = print_dirname_color(f->pred, depth+1);
   printf("\033[38;5;%dm/%s", color_val, f->name);

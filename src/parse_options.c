@@ -69,7 +69,7 @@ void print_help()
     "                            at the same time (may be necessary with lot of threads).\n"
     "  -e, --exclude <path>    : exclude directory. `*` match multiple characters, and `?` match one.\n"
     "      --no-exclude        : do not exclude any path.\n"
-    "      --fzf               : show in fzf.\n"
+    "      --fzf               : show in fzf (toggle on,off).\n"
     "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`.\n"
     "      --fzf-select <str>  : behaviour after selection. options: `none`, `cat`, `bat`, `git`, `open`.\n"
     "      --print-config      : show configuration.\n"
@@ -232,7 +232,7 @@ void parse_arg(struct parsed_options *options, int arg)
       options->no_exclude = true;
       break;
     case TOK_FZF: // fzf
-      options->activate_fzf = true;
+      options->activate_fzf = !options->activate_fzf;
       break;
     case TOK_FZF_PANE: // fzf-pane
            IF_ARG_MATCH(options->fzf_pane, "none", FZF_PANE_NONE)
@@ -295,7 +295,6 @@ void parse_config_files(struct parsed_options *options)
   if(stat.st_size == 0) return; // empty file
   char* config_raw = (char*) mmap64(NULL, (stat.st_size+1)*sizeof(char), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   config_raw[stat.st_size] = '\0';
-  // config_raw[stat.st_size+1] = '\0'; // TODO remove
   int config_capa = 32, config_argc = 0;
   char** config_argv = (char**)malloc(config_capa * sizeof(char*));
   config_argv[config_argc] = config_raw; // dummy argv[0] 
@@ -343,14 +342,6 @@ void parse_config_files(struct parsed_options *options)
     config_argv[++config_argc] = NULL;
   }
 
-
-  // TODO rm
-  // for(char** c=config_argv; *c!=NULL; c++)
-  //   printf("%s\n", *c);
-  // // for(int i=0; i<config_argc; i++)
-  // //   printf("%s\n", config_argv[i]);
-  // exit(0);
-  
   // process options
   while(1) {
     int arg = getopt_long_only(config_argc, config_argv, SHORTOPT_STR, long_options, NULL);
