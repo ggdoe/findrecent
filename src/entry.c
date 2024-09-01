@@ -64,7 +64,7 @@ int print_dirname_color(struct filename *f, int depth)
 
   return color_val;
 }
-#include <time.h>
+
 static inline
 void print_date(struct entry *e)
 {
