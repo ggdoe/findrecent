@@ -64,16 +64,14 @@ int print_dirname_color(struct filename *f, int depth)
 
   return color_val;
 }
-
+#include <time.h>
 static inline
 void print_date(struct entry *e)
 {
   char buffer[32];
   const size_t fixed_length = 27;
-  struct tm *tm = localtime(&e->date.tv_sec);
-  // strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm);
-  strftime(buffer, sizeof(buffer), "%c", tm);
-  for(size_t i=strlen(buffer); i<fixed_length; i++)
+  ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
+  for(size_t i=strlen(buffer)-1ul; i<fixed_length; i++)
     buffer[i] = ' ';
   buffer[fixed_length] = '\0';
   printf("%s", buffer);
@@ -91,7 +89,8 @@ void print_list_entry(struct list_entries *restrict l, struct parsed_options *re
     print_date(e);
     if(activate_color && search_type == SEARCH_DIRECTORIES) {
       print_dirname_color(e->name, 0);
-      printf("\033[0m\n");
+      printf("\033[0m");
+      putchar('\n');
     }
     else {
       if(activate_color) printf("\033[%sm", e->color);

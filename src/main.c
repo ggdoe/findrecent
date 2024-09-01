@@ -12,7 +12,6 @@ int main(int argc, char** argv)
   print_list_entry(&l, &options);
 
   free_list_entries(&l);
-  if(!options.options.exclude_list) 
-    free(options.options.exclude_list);
+  free(options.options.exclude_list);
   return 0;
 }
