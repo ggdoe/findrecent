@@ -12,5 +12,5 @@ install_cmd="ln -s $PWD/$output_name ~/.local/bin/$output_name"
 echo install command: $install_cmd
 
 set -xe
-# ./gen_colormap.sh
+# ./src/gen_colormap.sh
 gcc $WFLAGS $CFLAGS $SRC $LFLAGS -o $output_name

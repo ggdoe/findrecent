@@ -3,7 +3,7 @@
 set -e
 
 filename_gperf="colormap.gperf"
-filename_out="src/colormap.h"
+filename_out="colormap.h"
 remote_ls_colors="https://raw.githubusercontent.com/trapd00r/LS_COLORS/master/LS_COLORS" # nice
 curl -s $remote_ls_colors > LS_COLORS
 
