@@ -24,7 +24,8 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
   checkptr(l.buffer.b);
   l.buffer.n = nb_buffer;
 
-#if 1 // merge then qsort (slower?)
+
+#if 0 // merge then qsort (slower?)
   int cur_b=0, cur_e=0;
   for(int i=0; i<nb_threads; i++) {
     const size_t nb = ll[i].buffer.n;
@@ -52,7 +53,7 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
   #pragma omp parallel for
   for(int i=0; i<nb_threads; i++)
     qsort(ll[i].entries, ll[i].n, sizeof(struct entry), cmp_date);
-  
+
   merge_sorted_list(&l, ll, nb_threads);
 
   for(int i=0; i<nb_threads; i++)
@@ -67,10 +68,10 @@ int cmp_date(const void *p1, const void *p2)
   const struct entry *e1 = p1;
   const struct entry *e2 = p2;
 
-  const long
-   s = e1->date.tv_sec - e2->date.tv_sec;
-  if (s != 0) return s;
-  return e1->date.tv_nsec - e2->date.tv_nsec;
+  if (e1->date.tv_sec != e2->date.tv_sec)
+    return (e1->date.tv_sec > e2->date.tv_sec) - (e1->date.tv_sec < e2->date.tv_sec);
+  else
+    return (e1->date.tv_nsec > e2->date.tv_nsec) - (e1->date.tv_nsec < e2->date.tv_nsec);
 }
 
 void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_threads)
@@ -81,20 +82,20 @@ void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_t
   }
 
   #define get_entry(i) &ll[i].entries[ll[i].n]
-  struct entry minimum_value = {.date={0, 0}, .name=NULL};
-  
+  const struct entry maximum_value = {.date={.tv_sec=INT64_MAX, .tv_nsec=INT64_MAX}, .name=NULL};
+
   for(size_t cur=0; cur<l->n; cur++) {
-    struct entry *maxval = &minimum_value;
+    const struct entry *minval = &maximum_value;
     size_t argmin = 0;
     for(int i=0; i<nb_threads; i++) {
       if(ll[i].n >= ll[i].cap) continue;
       struct entry *curval = get_entry(i);
-      if(cmp_date(curval, maxval)>0) {
-        maxval = curval;
+      if(cmp_date(curval, minval)<0) {
+        minval = curval;
         argmin = i;
       }
     }
-    l->entries[cur] = *maxval;
+    l->entries[cur] = *minval;
     ll[argmin].n++;
   }
   #undef get_entry
