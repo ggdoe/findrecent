@@ -20,7 +20,7 @@ Command placed in the file `$HOME/.config/findrecent/findrecent.conf` are loaded
 Config file can be ignored by passing `--no-config` in command argument. 
 
 Here is an exemple of config file:
-```
+```bash 
 --color 
 
 --fzf
