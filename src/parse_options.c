@@ -54,7 +54,7 @@ void print_help()
 #define SSTRINGIZING(s)  STRINGIZING(s)
 #define DEFAULT_THREADS_NUMBER_STR  SSTRINGIZING(DEFAULT_THREADS_NUMBER)
   printf(
-    "%s: find recently modified files or directories.\n"
+    "%s: find recently modified files or directories.\n\n"
     "options:\n"
     "  -f, --find-files        : find files (default).\n"
     "  -d, --find-directories  : find directories.\n"
@@ -73,12 +73,8 @@ void print_help()
     "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`.\n"
     "      --fzf-select <str>  : behaviour after selection. options: `none`, `cat`, `bat`, `git`, `open`.\n"
     "      --print-config      : show configuration.\n"
-    "      --no-config         : do not use config file.\n"
+    "      --no-config         : do not use options from the config file `"CONFIG_FILE"`.\n"
     "  -h, --help              : show help.\n\n"
-
-    "config file (default: `"CONFIG_FILE"`):\n"
-    "  each line corresponds to an options (and has to start with `-`).\n"
-    "  commentary are marked with `#`.\n\n"
 
     "fzf commands:\n"
     "  ctrl+r  : reload\n"
