@@ -57,6 +57,6 @@ Here is an exemple of config file:
 ## Notes
 Parallelized with omp task, each file directory is launched in a new task if the number of links inside is less than a threshold (defined in `src/defs.h`). However, printing is often the bottleneck, so it doesn't affect much the perfs.
 
-Colors are defined in `src/colormap.h`, which is generated with the script `src/gen_colormap.sh`. It use gperf and LS_COLORS file to generate an hashmap (credit: <https://raw.githubusercontent.com/trapd00r/LS_COLORS/master/LS_COLORS>).
+Colors are defined in `src/colormap.h`, which is generated with the script `src/gen_colormap.sh`. It use gperf and LS_COLORS file to generate an hashmap (credit: <https://github.com/trapd00r/LS_COLORS>).
 
 Directory color is function of the depth of exploration, color is define in `DIR_COLOR_FUNCTION(depth)` in `src/colormap.h` with is a simple function used to fill ansi color code  `\e[38;5;%dm`. 
