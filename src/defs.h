@@ -16,7 +16,7 @@
 #define GETDENTS_BUFSIZE     (32768)   // size of the buffer for the getdents syscall, allocated on the stack for each subdirectories explored, be aware of stack overflow (see in findrecent.c to change for heap allocated buffer)
 #define INNER_BUFSIZE        (32768)   // minimum: 256 (=NAME_MAX)
 #define INITIAL_ENTRIES_SIZE (32768)   // initial size of the number of entries allocation (for each thread)
-#define TASK_LINKS_THRESHOLD (7)      // minimum number of links in a subdirectory to launch a new openmp task
+#define TASK_LINKS_THRESHOLD (7)       // minimum number of links in a subdirectory to launch a new openmp task
 
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
 #define checkptr(p) if(p == NULL) { perror(NULL); exit(1); }
