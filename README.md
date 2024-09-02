@@ -31,8 +31,9 @@ Here is an exemple of config file:
 
 # --threads 1
 
---exclude .git
---exclude .vscode*
+--exclude ".git"
+--exclude ".vscode*"
+--exclude ".cache"
 ```
 
 ## Options
