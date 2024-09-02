@@ -8,6 +8,8 @@ Search files and sort them. Almost as fast as regular find without sort.
 ## Build
 Compile all files in src, or execute `./build.sh`. Binary is named by default `fr`.
 
+Source `fr_completion.bash` to enable bash completion.
+
 To add or change colors you can check `src/gen_colormap.sh`.
 
 ## fzf support

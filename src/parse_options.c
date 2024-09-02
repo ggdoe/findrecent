@@ -5,9 +5,9 @@
 
 #define INTIAL_EXCLUDE_LIST_SIZE   4096
 #define CONFIG_FILE  "~/.config/findrecent/findrecent.conf"
-#define DEFAULT_THREADS_NUMBER     5
+#define DEFAULT_THREADS_NUMBER     4
 
-#define SHORTOPT_STR "fdt:D:rT:Ie:h"
+#define SHORTOPT_STR "fdt:D:rT:e:h"
 #define TOK_FIND_FILES          'f'
 #define TOK_FIND_DIRECTORIES    'd'
 #define TOK_DATE_TYPE           't'
@@ -64,7 +64,7 @@ void print_help()
     "  -r, --reverse           : reverse the order.\n"
     "      --color             : colorize output name (toggle on,off).\n"
     "  -T, --threads <int>     : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
-    "  -I, --inc-max-fd        : increase the maximum number of files descriptors opened\n"
+    "      --inc-max-fd        : increase the maximum number of files descriptors opened\n"
     "                            at the same time (may be necessary with lot of threads).\n"
     "  -e, --exclude <path>    : exclude directory. `*` match multiple characters, and `?` match one.\n"
     "      --no-exclude        : do not exclude any path.\n"
@@ -92,7 +92,7 @@ struct parsed_options default_options()
       .exclude_list = exclude_list,
       .search_type  = SEARCH_FILES,
       .date_type    = DATE_MODIF,
-      .max_depth    = UINT32_MAX,
+      .max_depth    = UINT64_MAX,
       },
     .main_directory = local_directory,
     .threads        = DEFAULT_THREADS_NUMBER,
@@ -123,7 +123,10 @@ void print_config(struct parsed_options *options)
 
   printf("search_type:    %s \n", (options->options.search_type == SEARCH_FILES) ? "file" : "directories");
   printf("date_type:      %s \n",  date_type_str[options->options.date_type]);
-  printf("max_depth:      %lu\n",  options->options.max_depth);
+  if(options->options.max_depth == UINT64_MAX)
+    printf("max_depth:      None\n");
+  else
+    printf("max_depth:      %lu\n",  options->options.max_depth);
   printf("main_directory: `%s`\n", options->main_directory);
   printf("threads:        %u \n",  options->threads);
   printf("reverse_order:  %s \n",  true_false_str[options->reverse_order]);
@@ -131,7 +134,8 @@ void print_config(struct parsed_options *options)
   printf("fzf-pane:       %s \n",  fzf_pane_str[options->fzf_pane]);
   printf("fzf-select:     %s \n",  fzf_select_str[options->fzf_select]);
   printf("color:          %s \n",  true_false_str[options->color]);
-  printf("inc_max_fd:     %s \n",  true_false_str[options->inc_max_fd]);
+  if(options->inc_max_fd)
+    printf("inc_max_fd:     %s \n",  true_false_str[options->inc_max_fd]);
   printf("no_exclude:     %s \n",  true_false_str[options->no_exclude]);
   char* cur = options->options.exclude_list;
   while(*cur != '\0') {

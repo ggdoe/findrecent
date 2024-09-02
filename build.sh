@@ -9,8 +9,12 @@ SRC="src/main.c  src/findrecent.c  src/sortmerge.c  src/entry.c  src/buffer.c  s
 
 output_name=fr
 install_cmd="ln -s $PWD/$output_name ~/.local/bin/$output_name"
-echo install command: $install_cmd
-
+echo 
 set -xe
 # ./src/gen_colormap.sh
 gcc $WFLAGS $CFLAGS $SRC $LFLAGS -o $output_name
+
+{ set +x; } 2>/dev/null
+echo
+echo "install command:  " $install_cmd
+echo "bash_completion:  " "source '$PWD/fr_completion.bash'"
