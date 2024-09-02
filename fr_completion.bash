@@ -20,6 +20,7 @@ _fr_completions()
     -fzf
     -fzf-pane
     -fzf-select
+    -fzf-search-date
     -print-config
     -no-config
     -help

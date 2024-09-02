@@ -21,6 +21,7 @@
 #define TOK_FZF                 'F'
 #define TOK_FZF_PANE            'P'
 #define TOK_FZF_SELECT          'S'
+#define TOK_FZF_SEARCH_DATE     'H'
 #define TOK_PRINT_CONFIG        'p'
 #define TOK_NO_CONFIG           'N'
 #define TOK_HELP                'h'
@@ -42,6 +43,7 @@ struct option long_options[] = {
   {"fzf",              no_argument,       0, TOK_FZF             },
   {"fzf-pane",         required_argument, 0, TOK_FZF_PANE        },
   {"fzf-select",       required_argument, 0, TOK_FZF_SELECT      },
+  {"fzf-search-date",  no_argument,       0, TOK_FZF_SEARCH_DATE },
   {"no-config",        no_argument,       0, TOK_NO_CONFIG       },
   {"help",             no_argument,       0, TOK_HELP            },
   {0, 0, 0, 0}
@@ -71,6 +73,7 @@ void print_help()
     "      --fzf               : show in fzf (toggle on,off).\n"
     "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`.\n"
     "      --fzf-select <str>  : behaviour after selection. options: `none`, `cat`, `bat`, `git`, `open`.\n"
+    "      --fzf-search-date   : enable search for date in fzf.\n"
     "      --print-config      : show configuration.\n"
     "      --no-config         : do not use options from the config file `"CONFIG_FILE"`.\n"
     "  -h, --help              : show help.\n\n"
@@ -88,26 +91,27 @@ struct parsed_options default_options()
   char* exclude_list = (char*)calloc(INTIAL_EXCLUDE_LIST_SIZE, sizeof(char));
 
   return (struct parsed_options){
-    .options        = {
-      .exclude_list = exclude_list,
-      .search_type  = SEARCH_FILES,
-      .date_type    = DATE_MODIF,
-      .max_depth    = UINT64_MAX,
+    .options         = {
+      .exclude_list  = exclude_list,
+      .search_type   = SEARCH_FILES,
+      .date_type     = DATE_MODIF,
+      .max_depth     = UINT64_MAX,
       },
-    .main_directory = local_directory,
-    .threads        = DEFAULT_THREADS_NUMBER,
-    .reverse_order  = false,
-    .color          = false,
-    .inc_max_fd     = false,
-    .no_exclude     = false,
+    .main_directory  = local_directory,
+    .threads         = DEFAULT_THREADS_NUMBER,
+    .reverse_order   = false,
+    .color           = false,
+    .inc_max_fd      = false,
+    .no_exclude      = false,
 
-    .activate_fzf   = false,
-    .fzf_pane       = FZF_PANE_NONE,
-    .fzf_select     = FZF_SELECT_NONE,
+    .activate_fzf    = false,
+    .fzf_pane        = FZF_PANE_NONE,
+    .fzf_select      = FZF_SELECT_NONE,
+    .fzf_search_date = false,
 
-    .parsing_failed = false,
-    .print_config   = false,
-    .no_config      = false,
+    .parsing_failed  = false,
+    .print_config    = false,
+    .no_config       = false,
     .exclude_list_count = 0,
     .exclude_list_capa  = INTIAL_EXCLUDE_LIST_SIZE
   };
@@ -121,25 +125,26 @@ void print_config(struct parsed_options *options)
   const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open" };
   const char* date_type_str[]  = { "creation", "access", "modification" };
 
-  printf("search_type:    %s \n", (options->options.search_type == SEARCH_FILES) ? "file" : "directories");
-  printf("date_type:      %s \n",  date_type_str[options->options.date_type]);
+  printf("search_type:      %s \n", (options->options.search_type == SEARCH_FILES) ? "file" : "directories");
+  printf("date_type:        %s \n",  date_type_str[options->options.date_type]);
   if(options->options.max_depth == UINT64_MAX)
-    printf("max_depth:      None\n");
+    printf("max_depth:        None\n");
   else
-    printf("max_depth:      %lu\n",  options->options.max_depth);
-  printf("main_directory: `%s`\n", options->main_directory);
-  printf("threads:        %u \n",  options->threads);
-  printf("reverse_order:  %s \n",  true_false_str[options->reverse_order]);
-  printf("fzf:            %s \n",  true_false_str[options->activate_fzf]);
-  printf("fzf-pane:       %s \n",  fzf_pane_str[options->fzf_pane]);
-  printf("fzf-select:     %s \n",  fzf_select_str[options->fzf_select]);
-  printf("color:          %s \n",  true_false_str[options->color]);
+    printf("max_depth:        %lu\n",  options->options.max_depth);
+  printf("main_directory:   `%s`\n", options->main_directory);
+  printf("threads:          %u \n",  options->threads);
+  printf("reverse_order:    %s \n",  true_false_str[options->reverse_order]);
+  printf("fzf:              %s \n",  true_false_str[options->activate_fzf]);
+  printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
+  printf("fzf-select:       %s \n",  fzf_select_str[options->fzf_select]);
+  printf("fzf-search-date:  %s \n",  true_false_str[options->fzf_search_date]);
+  printf("color:            %s \n",  true_false_str[options->color]);
   if(options->inc_max_fd)
-    printf("inc_max_fd:     %s \n",  true_false_str[options->inc_max_fd]);
-  printf("no_exclude:     %s \n",  true_false_str[options->no_exclude]);
+    printf("inc_max_fd:       %s \n",  true_false_str[options->inc_max_fd]);
+  printf("no_exclude:       %s \n",  true_false_str[options->no_exclude]);
   char* cur = options->options.exclude_list;
   while(*cur != '\0') {
-    printf("exclude:        `%s`\n", cur);
+    printf("exclude:          `%s`\n", cur);
     cur += strlen(cur) + 1;
   } 
 }
@@ -252,6 +257,9 @@ void parse_arg(struct parsed_options *options, int arg)
         fprintf(stderr, "bad argument for fzf-select: `%s`. options: `none`, `cat`, `bat`, `git`, `open`.\n", optarg);
         options->parsing_failed = true;
       }
+      break;
+    case TOK_FZF_SEARCH_DATE: // fzf-search-date
+      options->fzf_search_date = !options->fzf_search_date;
       break;
     case TOK_PRINT_CONFIG: // help
       options->print_config = true;

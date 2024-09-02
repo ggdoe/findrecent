@@ -71,7 +71,9 @@ void print_date(struct entry *e)
   char buffer[32];
   const size_t fixed_length = 27;
   ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
-  for(size_t i=strlen(buffer)-1ul; i<fixed_length; i++)
+  const size_t len = strlen(buffer);
+  buffer[len-1] = ':';
+  for(size_t i=len; i<fixed_length; i++)
     buffer[i] = ' ';
   buffer[fixed_length] = '\0';
   printf("%s", buffer);

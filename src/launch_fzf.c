@@ -16,8 +16,8 @@ void launch_in_fzf(char** argv, struct parsed_options *options)
     "--ansi", 
     "--tac", 
     "+s",
-    "-d  ",      // delimiter is 2 space
-    "--nth=2..", // so that it dont search in the date 
+    "-d: ",                                              // delimiter is ': '
+    options->fzf_search_date ? "--nth=1.." : "--nth=-1", // so that it dont search in the date 
 
     preview_cmd, 
     reload_cmd, 

@@ -100,6 +100,7 @@ struct parsed_options {
   bool activate_fzf;
   enum fzf_pane fzf_pane;
   enum fzf_select fzf_select;
+  bool fzf_search_date;
 
   // private
   bool parsing_failed;
