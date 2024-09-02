@@ -28,7 +28,7 @@ struct colormap {const char* ext; const char* color;};
 %%" > $filename_gperf
 cat LS_COLORS | 
 sed -n "/^\./s/^\.//p" | 
-sed -r "/ 1 |\{|\}|\[|\]|\*/d" | 
+sed -r "/\{|\}|\[|\]|\*/d" | 
 awk '{printf "%s, \"%s\"\n", $1, $2}' >> $filename_gperf
 echo %% >> $filename_gperf
 
@@ -36,7 +36,8 @@ echo %% >> $filename_gperf
 # remove key for gperf, only keeping values (color), 
 # because we dont care if we use the wrong color for unknown files (maybe that's a bad idea)
 gperf --language C -t -C -N"get_color" -m20 $filename_gperf | 
-sed 's/{".\+", \(".\+"\)}/\1/;s/{""}/'$default_color'/g' | # remove keys from wordlist
+sed 's/{".\+", \(".\+"\)}/\1/' | # remove keys from wordlist
+sed 's/{""}/'$default_color'/g' | # replace empty values with $default_color
 sed '/struct colormap.*;$/d' | # remove struct def
 sed 's/struct colormap wordlist/char* wordlist/' | # change type of wordlist
 sed 's/struct colormap/char/' | # change type of the function
