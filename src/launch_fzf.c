@@ -58,7 +58,7 @@ char* stringize_argv(char** argv)
 void fill_preview_cmd(char* preview, struct parsed_options *options)
 {
   strcat(preview, "--preview=");
-  if(options->options.search_type == SEARCH_DIRECTORIES)
+  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE)
     strcat(preview, "ls -lth --color {-1}");
   else {
     switch (options->fzf_pane) {
@@ -85,7 +85,7 @@ void fill_select_cmd(char* select, struct parsed_options *options)
 {
   strcat(select, "--bind=enter:become(");
 
-  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN)
+  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_NONE)
     strcat(select, "ls -lth --color {-1}");
   else {
     switch (options->fzf_select) {
@@ -106,7 +106,7 @@ void fill_select_cmd(char* select, struct parsed_options *options)
       case FZF_SELECT_OPEN:
         strcat(select, "open {-1}");
         break;
-      case FZF_PANE_NONE: default:
+      case FZF_SELECT_NONE: default:
         strcat(select, "echo {-1}");
         break;
     }
