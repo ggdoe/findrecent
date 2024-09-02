@@ -32,7 +32,7 @@ struct list_entries findrecent(char *restrict directory, const struct work_optio
   // remove a '/' when necessary to get the same output as 'find'
   size_t len = strlen(directory)-1;
   if(len > 1 && directory[len] == '/') directory[len] = '\0'; 
-  if(*directory == '/') *directory = '\0'; // remove supernumenary '/' at the start
+  if(len == 0 && *directory == '/') *directory = '\0'; // remove supernumenary '/' at the start
   
   struct filename *path;
   switch(options->search_type)
