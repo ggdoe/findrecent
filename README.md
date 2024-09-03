@@ -2,7 +2,7 @@
 Search files and sort them. Almost as fast as regular find without sort.
 
 <div align="center">
-<img width="743" alt="image" src="https://github.com/user-attachments/assets/9702487a-42f8-4857-bc1e-82515f75173d">
+<img width="719" alt="image" src="https://github.com/user-attachments/assets/466b8e5e-a23f-4f9b-a579-dece133e7661">
 </div>
   
 ## Build
