@@ -72,7 +72,7 @@ void print_help()
     "      --no-exclude        : do not exclude any path.\n"
     "      --fzf               : show in fzf (toggle on,off).\n"
     "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`.\n"
-    "      --fzf-select <str>  : behaviour after selection. options: `none`, `cat`, `bat`, `git`, `open`.\n"
+    "      --fzf-select <str>  : action to execute after selection. options: `none`, `cat`, `bat`, `git`, `open`.\n"
     "      --fzf-search-date   : enable search for date in fzf.\n"
     "      --print-config      : show configuration.\n"
     "      --no-config         : do not use options from the config file `"CONFIG_FILE"`.\n"
