@@ -85,7 +85,8 @@ enum fzf_select {
   FZF_SELECT_CAT,
   FZF_SELECT_BAT,
   FZF_SELECT_GIT,
-  FZF_SELECT_OPEN
+  FZF_SELECT_OPEN,
+  FZF_SELECT_EXEC
 };
 
 struct parsed_options {

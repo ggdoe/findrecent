@@ -7,9 +7,9 @@ static void fill_select_cmd(char* select, struct parsed_options *options);
 
 void launch_in_fzf(char** argv, struct parsed_options *options)
 {
-  char preview_cmd[256] = "";
-  char reload_cmd[256] = "";
-  char select_cmd[256] = "";
+  char preview_cmd[512] = "";
+  char reload_cmd[512] = "";
+  char select_cmd[512] = "";
 
   char* fzf_argv[] = {
     "fzf", 
@@ -101,6 +101,15 @@ void fill_select_cmd(char* select, struct parsed_options *options)
         "then "
         "git -C $(dirname {-1}) diff $(basename {-1});"
         "else echo cannot show git changes, \\`{-1}\\` is not in a git directory. ; fi;"
+        );
+        break;
+      case FZF_SELECT_EXEC:
+        strcat(select, 
+        "echo '{-1}' | fzf "
+        "--header \"Enter a command: \" --header-first "
+        "--bind=\"enter:become(\\$FZF_QUERY {-1})\" "
+        "--disabled --height 5 --info hidden --no-separator "
+        "--layout reverse --border --margin 1,5% --padding=1 --pointer \"\" "
         );
         break;
       case FZF_SELECT_OPEN:

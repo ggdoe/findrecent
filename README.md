@@ -15,7 +15,7 @@ To add or change colors you can check `src/gen_colormap.sh`.
 ## fzf support
 fzf can be enable with the option `--fzf`, fzf must be installed.
 - preview pane can be enable with `--fzf-pane <str>`, options are `none`, `cat`, `bat`. bat must be installed.
-- if enter is pressed, execute the action define by `--fzf-select <str>`, options are `none`, `cat`, `bat`, `git`, `open`.
+- if enter is pressed, execute the action define by `--fzf-select <str>`, options are `none`, `cat`, `bat`, `git`, `open`, `exec`. 
 - press `ctrl+r` to reload.
 
 ## Config file
@@ -42,7 +42,7 @@ Here is an exemple of config file:
 
 - `-f`, `--find-files` : Find files (default).
 - `-d`, `--find-directories` : Find directories.
-- `-t`, `--date-type <str>` : Change the sorting criterion, can be `creation`, `access`, or `modification` (default: modification).
+- `-t`, `--date-type <str>` : Change the sorting criterion, can be `creation`, `access`, or `modification` (default: `modification`).
 - `-D`, `--depth <int>` : Maximum depth of search.
 - `-r`, `--reverse` : Reverse the order.
 - `--color` : Colorize output name (toggle on, off).
@@ -51,8 +51,8 @@ Here is an exemple of config file:
 - `-e`, `--exclude <path>` : Exclude directory. `*` matches multiple characters, and `?` matches one.
 - `--no-exclude` : Do not exclude any path.
 - `--fzf` : Show in `fzf` (toggle on, off).
-- `--fzf-pane <str>` : Activate `fzf` side pane. Options: `none`, `cat`, `bat`.
-- `--fzf-select <str>` : Action to execute after selection. Options: `none`, `cat`, `bat`, `git`, `open`.
+- `--fzf-pane <str>` : Activate `fzf` side pane. Options: `none`, `cat`, `bat`. (default: `cat`)
+- `--fzf-select <str>` : Action to execute after selection. Options: `none`, `cat`, `bat`, `git`, `open`, `exec` (default: `exec`).
 - `--print-config` : Show configuration.
 - `--no-config` : Do not use options from the config file (`$HOME/.config/findrecent/findrecent.conf`).
 - `-h`, `--help` : Show help.

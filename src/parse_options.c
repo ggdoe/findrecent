@@ -61,7 +61,7 @@ void print_help()
     "  -f, --find-files        : find files (default).\n"
     "  -d, --find-directories  : find directories.\n"
     "  -t, --date-type <str>   : change the sorting criterium, can be `creation`, \n"
-    "                            `access`, or `modification` (default: modification).\n"
+    "                            `access`, or `modification` (default: `modification`).\n"
     "  -D, --depth <int>       : maximum depth of search.\n"
     "  -r, --reverse           : reverse the order.\n"
     "      --color             : colorize output name (toggle on,off).\n"
@@ -71,8 +71,9 @@ void print_help()
     "  -e, --exclude <path>    : exclude directory. `*` match multiple characters, and `?` match one.\n"
     "      --no-exclude        : do not exclude any path.\n"
     "      --fzf               : show in fzf (toggle on,off).\n"
-    "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`.\n"
-    "      --fzf-select <str>  : action to execute after selection. options: `none`, `cat`, `bat`, `git`, `open`.\n"
+    "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`. (default: `cat`)\n"
+    "      --fzf-select <str>  : action to execute after selection.\n"
+    "                            options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
     "      --fzf-search-date   : enable search for date in fzf.\n"
     "      --print-config      : show configuration.\n"
     "      --no-config         : do not use options from the config file `"CONFIG_FILE"`.\n"
@@ -105,8 +106,8 @@ struct parsed_options default_options()
     .no_exclude      = false,
 
     .activate_fzf    = false,
-    .fzf_pane        = FZF_PANE_NONE,
-    .fzf_select      = FZF_SELECT_NONE,
+    .fzf_pane        = FZF_PANE_CAT,
+    .fzf_select      = FZF_SELECT_EXEC,
     .fzf_search_date = false,
 
     .parsing_failed  = false,
@@ -122,7 +123,7 @@ void print_config(struct parsed_options *options)
 {
   const char* true_false_str[] = { "false", "true"};
   const char* fzf_pane_str[]   = { "none", "cat", "bat" };
-  const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open" };
+  const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open", "exec" };
   const char* date_type_str[]  = { "creation", "access", "modification" };
 
   printf("search_type:      %s \n", (options->options.search_type == SEARCH_FILES) ? "file" : "directories");
@@ -253,8 +254,9 @@ void parse_arg(struct parsed_options *options, int arg)
       else IF_ARG_MATCH(options->fzf_select, "bat",  FZF_SELECT_BAT)
       else IF_ARG_MATCH(options->fzf_select, "git",  FZF_SELECT_GIT)
       else IF_ARG_MATCH(options->fzf_select, "open", FZF_SELECT_OPEN)
+      else IF_ARG_MATCH(options->fzf_select, "exec", FZF_SELECT_EXEC)
       else {
-        fprintf(stderr, "bad argument for fzf-select: `%s`. options: `none`, `cat`, `bat`, `git`, `open`.\n", optarg);
+        fprintf(stderr, "bad argument for fzf-select: `%s`. options: `none`, `cat`, `bat`, `git`, `open`, `exec`.\n", optarg);
         options->parsing_failed = true;
       }
       break;
