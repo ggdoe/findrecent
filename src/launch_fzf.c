@@ -105,7 +105,7 @@ void fill_select_cmd(char* select, struct parsed_options *options)
         break;
       case FZF_SELECT_EXEC:
         strcat(select, 
-        "echo '{-1}' | fzf "
+        "echo {-1} | fzf "
         "--header \"Enter a command: \" --header-first "
         "--bind=\"enter:become(\\$FZF_QUERY {-1})\" "
         "--disabled --height 5 --info hidden --no-separator "
