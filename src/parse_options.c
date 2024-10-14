@@ -10,7 +10,7 @@
 #define SHORTOPT_STR "fdt:D:rT:e:h"
 #define TOK_FIND_FILES          'f'
 #define TOK_FIND_DIRECTORIES    'd'
-#define TOK_DATE_TYPE           't'
+#define TOK_SORT_TYPE           't'
 #define TOK_REVERSE             'r'
 #define TOK_DEPTH               'D'
 #define TOK_COLOR               'c'
@@ -31,7 +31,7 @@ static const
 struct option long_options[] = {
   {"find-files",       no_argument,       0, TOK_FIND_FILES      },
   {"find-directories", no_argument,       0, TOK_FIND_DIRECTORIES},
-  {"date-type",        required_argument, 0, TOK_DATE_TYPE       },
+  {"sort-type",        required_argument, 0, TOK_SORT_TYPE       },
   {"reverse",          no_argument,       0, TOK_REVERSE         },
   {"depth",            required_argument, 0, TOK_DEPTH           },
   {"color",            no_argument,       0, TOK_COLOR           },
@@ -60,8 +60,8 @@ void print_help()
     "options:\n"
     "  -f, --find-files        : find files (default).\n"
     "  -d, --find-directories  : find directories.\n"
-    "  -t, --date-type <str>   : change the sorting criterium, can be `creation`, \n"
-    "                            `access`, or `modification` (default: `modification`).\n"
+    "  -t, --sort-type <str>   : change the sorting criterium, can be `creation`, \n"
+    "                            `access`, `modification` or `size` (default: `modification`).\n"
     "  -D, --depth <int>       : maximum depth of search.\n"
     "  -r, --reverse           : reverse the order.\n"
     "      --color             : colorize output name (toggle on,off).\n"
@@ -95,7 +95,7 @@ struct parsed_options default_options()
     .options         = {
       .exclude_list  = exclude_list,
       .search_type   = SEARCH_FILES,
-      .date_type     = DATE_MODIF,
+      .sort_type     = SORT_MODIF,
       .max_depth     = UINT64_MAX,
       },
     .main_directory  = local_directory,
@@ -124,10 +124,10 @@ void print_config(struct parsed_options *options)
   const char* true_false_str[] = { "false", "true"};
   const char* fzf_pane_str[]   = { "none", "cat", "bat" };
   const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open", "exec" };
-  const char* date_type_str[]  = { "creation", "access", "modification" };
+  const char* sort_type_str[]  = { "creation", "access", "modification", "size" };
 
   printf("search_type:      %s \n", (options->options.search_type == SEARCH_FILES) ? "file" : "directories");
-  printf("date_type:        %s \n",  date_type_str[options->options.date_type]);
+  printf("sort_type:        %s \n",  sort_type_str[options->options.sort_type]);
   if(options->options.max_depth == UINT64_MAX)
     printf("max_depth:        None\n");
   else
@@ -206,12 +206,13 @@ void parse_arg(struct parsed_options *options, int arg)
     case TOK_FIND_DIRECTORIES: // find-directories
       options->options.search_type = SEARCH_DIRECTORIES;
       break;
-    case TOK_DATE_TYPE: // date-type
-           IF_ARG_MATCH(options->options.date_type, "access",       DATE_ACCESS)
-      else IF_ARG_MATCH(options->options.date_type, "creation",     DATE_CREAT)
-      else IF_ARG_MATCH(options->options.date_type, "modification", DATE_MODIF)
+    case TOK_SORT_TYPE: // sort-type
+           IF_ARG_MATCH(options->options.sort_type, "access",       SORT_ACCESS)
+      else IF_ARG_MATCH(options->options.sort_type, "creation",     SORT_CREAT)
+      else IF_ARG_MATCH(options->options.sort_type, "modification", SORT_MODIF)
+      else IF_ARG_MATCH(options->options.sort_type, "size",         SORT_SIZE)
       else {
-        fprintf(stderr, "bad argument for date-type: `%s`. options: `creation`, `access`, `modification`.\n", optarg);
+        fprintf(stderr, "bad argument for sort-type: `%s`. options: `creation`, `access`, `modification`, `size`.\n", optarg);
         options->parsing_failed = true;
       }
       break;

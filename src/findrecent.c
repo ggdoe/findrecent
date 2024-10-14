@@ -41,7 +41,7 @@ struct list_entries findrecent(char *restrict directory, const struct work_optio
       path = push_buffer_filename(&lt.l[0], NULL, directory);
     break; 
     case SEARCH_DIRECTORIES:
-      push_entry(&lt.l[0], directory, NULL, &s, options->date_type);
+      push_entry(&lt.l[0], directory, NULL, &s, options->sort_type);
       path = lt.l[0].entries[0].name;
     break;
   }
@@ -93,7 +93,7 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
         }
 
         if(d->d_type == options->search_type){
-          push_entry(l, filename, path, &s, options->date_type);
+          push_entry(l, filename, path, &s, options->sort_type);
         }
         if(d->d_type == DT_DIR)
         {

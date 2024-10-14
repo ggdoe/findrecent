@@ -9,7 +9,7 @@ _fr_completions()
   opts=(
     -find-files
     -find-directories
-    -date-type
+    -sort-type
     -depth
     -reverse
     -color
@@ -27,8 +27,8 @@ _fr_completions()
   )
 
   case "${prev}" in
-  -t | -?(-)date-type)
-    COMPREPLY=( $(compgen -W "creation access modification" -- "$cur") )
+  -t | -?(-)sort-type)
+    COMPREPLY=( $(compgen -W "creation access modification size" -- "$cur") )
     return 0
     ;;
   -D | -?(-)depth)

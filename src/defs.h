@@ -40,7 +40,10 @@ struct filename{
 };
 
 struct entry {
-  struct timespec date;
+  union {
+    struct timespec date;
+    size_t size;
+  };
   struct filename *name;
   const char* color;
 };
@@ -56,10 +59,11 @@ struct list_task {
   struct list_entries *l;
 };
 
-enum date_type {
-  DATE_CREAT=0,
-  DATE_ACCESS,
-  DATE_MODIF
+enum sort_type {
+  SORT_CREAT=0,
+  SORT_ACCESS,
+  SORT_MODIF,
+  SORT_SIZE
 };
 
 enum search_type {
@@ -69,7 +73,7 @@ enum search_type {
 
 struct work_options {
   enum search_type search_type;
-  enum date_type date_type;
+  enum sort_type sort_type;
   char* exclude_list;
   size_t max_depth;
 };
@@ -116,7 +120,7 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads);
 void print_list_entry(struct list_entries *restrict l, struct parsed_options *restrict options);
 void free_list_entries(struct list_entries *l);
 struct filename *push_buffer_filename(struct list_entries *restrict l, struct filename *restrict pred, const char *restrict name);
-void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type);
+void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum sort_type type);
 
 struct parsed_options parse_options(int argc, char** argv);
 void launch_in_fzf(char** argv, struct parsed_options *options);

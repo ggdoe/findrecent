@@ -2,7 +2,7 @@
 #include <time.h>
 #include "colormap.h"
 
-void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum date_type type)
+void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum sort_type type)
 {
   size_t n = l->n++;
   if(n >= l->cap) {
@@ -14,14 +14,17 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
   struct entry *e = &l->entries[n];
   switch (type)
   {
-  case DATE_CREAT:
+  case SORT_CREAT:
     e->date = s->st_ctim; // creation
     break;
-  case DATE_ACCESS:
-  e->date = s->st_atim; // last access
+  case SORT_ACCESS:
+    e->date = s->st_atim; // last access
     break;
-  case DATE_MODIF: default:
-  e->date = s->st_mtim; // last modif
+  case SORT_MODIF: default:
+    e->date = s->st_mtim; // last modif
+    break;
+  case SORT_SIZE:
+    e->size = s->st_size; // size
     break;
   }
 
@@ -66,17 +69,30 @@ int print_dirname_color(struct filename *f, int depth)
 }
 
 static inline
-void print_date(struct entry *e)
+void print_entry_info(struct entry *e, enum sort_type sort_type)
 {
-  char buffer[32];
-  const size_t fixed_length = 27;
-  ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
-  const size_t len = strlen(buffer);
-  buffer[len-1] = ':';
-  for(size_t i=len; i<fixed_length; i++)
-    buffer[i] = ' ';
-  buffer[fixed_length] = '\0';
-  printf("%s", buffer);
+  switch (sort_type) {
+    case SORT_SIZE: {
+      size_t id=0;
+      size_t size = e->size;
+      char symbols[] = {'B', 'K', 'M', 'G', 'T', 'P'}; 
+      for(; (size>>(10*id))>=1024 && id < sizeof(symbols)/sizeof(char); id++);
+      printf("%10.2lf%c:  ", (double)size/(1<<(10*id)), symbols[id]); 
+      break;
+    }
+    default: {
+      char buffer[32];
+      const size_t fixed_length = 27;
+      ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
+      const size_t len = strlen(buffer);
+      buffer[len-1] = ':';
+      for(size_t i=len; i<fixed_length; i++)
+        buffer[i] = ' ';
+      buffer[fixed_length] = '\0';
+      printf("%s", buffer);
+      break;
+    }
+  }
 }
 
 void print_list_entry(struct list_entries *restrict l, struct parsed_options *restrict options)
@@ -88,7 +104,8 @@ void print_list_entry(struct list_entries *restrict l, struct parsed_options *re
 
   for(size_t i=0; i<n; i++){
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
-    print_date(e);
+    print_entry_info(e, options->options.sort_type);
+
     if(activate_color && search_type == SEARCH_DIRECTORIES) {
       print_dirname_color(e->name, 0);
       printf("\033[0m");

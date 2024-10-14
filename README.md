@@ -42,7 +42,7 @@ Here is an exemple of config file:
 
 - `-f`, `--find-files` : Find files (default).
 - `-d`, `--find-directories` : Find directories.
-- `-t`, `--date-type <str>` : Change the sorting criterion, can be `creation`, `access`, or `modification` (default: `modification`).
+- `-t`, `--sort-type <str>` : Change the sorting criterion, can be `creation`, `access`, `modification` or `size` (default: `modification`).
 - `-D`, `--depth <int>` : Maximum depth of search.
 - `-r`, `--reverse` : Reverse the order.
 - `--color` : Colorize output name (toggle on, off).
