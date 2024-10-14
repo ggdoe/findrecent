@@ -106,9 +106,11 @@ void fill_select_cmd(char* select, struct parsed_options *options)
       case FZF_SELECT_EXEC:
         strcat(select, 
         "echo {-1} | fzf "
-        "--header \"Enter a command: \" --header-first "
-        "--bind=\"enter:become(\\$FZF_QUERY {-1})\" "
-        "--disabled --height 5 --info hidden --no-separator "
+        // "--header \"Enter a command: \" --header-first "
+        // "--bind=enter:become:\"\\$FZF_QUERY {-1}\" "
+        "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
+        "--bind=enter:become:'eval $(echo $FZF_QUERY | sed \"s#%#\\{}#g;t;s#\\$# \\{}#\" )' "
+        "--disabled --height 5 --info hidden --no-separator --no-scrollbar "
         "--layout reverse --border --margin 1,5% --padding=1 --pointer \"\" "
         );
         break;
