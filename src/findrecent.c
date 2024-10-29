@@ -105,7 +105,7 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
             perror(NULL); exit(1); 
           }
           
-          if(s.st_nlink >= TASK_LINKS_THRESHOLD){
+          if(s.st_nlink >= options->task_threshold){
             #pragma omp task
             findrecent_work(lt, newfd, nextpath, options, depth+1);
           }

@@ -85,7 +85,7 @@ void fill_select_cmd(char* select, struct parsed_options *options)
 {
   strcat(select, "--bind=enter:become(");
 
-  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_NONE)
+  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE)
     strcat(select, "ls -lth --color {-1}");
   else {
     switch (options->fzf_select) {
@@ -106,8 +106,6 @@ void fill_select_cmd(char* select, struct parsed_options *options)
       case FZF_SELECT_EXEC:
         strcat(select, 
         "echo {-1} | fzf "
-        // "--header \"Enter a command: \" --header-first "
-        // "--bind=enter:become:\"\\$FZF_QUERY {-1}\" "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
         "--bind=enter:become:'eval $(echo $FZF_QUERY | sed \"s#%#\\{}#g;t;s#\\$# \\{}#\" )' "
         "--disabled --height 5 --info hidden --no-separator --no-scrollbar "

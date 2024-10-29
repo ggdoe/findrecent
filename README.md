@@ -48,6 +48,7 @@ Here is an exemple of config file:
 - `--color` : Colorize output name (toggle on, off).
 - `-T`, `--threads <int>` : Set the number of threads during the file search. It does not affect much because printing is often the bottleneck.
 - `--inc-max-fd` : Increase the maximum number of file descriptors opened at the same time (may be necessary with a lot of threads).
+- `--task-threshold <int>` : Minimum number of links in a subdirectory to launch a new openmp task. Empty folders have 2 links, values less or equal than 2 always launch a new task, (default: 2).
 - `-e`, `--exclude <path>` : Exclude directory. `*` matches multiple characters, and `?` matches one.
 - `--no-exclude` : Do not exclude any path.
 - `--fzf` : Show in `fzf` (toggle on, off).

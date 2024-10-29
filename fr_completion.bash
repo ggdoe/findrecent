@@ -15,6 +15,7 @@ _fr_completions()
     -color
     -threads
     -inc-max-fd
+    -task-threshold
     -exclude
     -no-exclude
     -fzf
@@ -31,10 +32,9 @@ _fr_completions()
     COMPREPLY=( $(compgen -W "creation access modification size" -- "$cur") )
     return 0
     ;;
-  -D | -?(-)depth)
-    return 0
-    ;;
-  -T | -?(-)threads)
+  -D | -?(-)depth | \
+  -T | -?(-)threads | \
+       -?(-)task-threshold)
     return 0
     ;;
   -e | -?(-)exclude)

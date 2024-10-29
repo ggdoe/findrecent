@@ -6,6 +6,7 @@
 #define INTIAL_EXCLUDE_LIST_SIZE   4096
 #define CONFIG_FILE  "~/.config/findrecent/findrecent.conf"
 #define DEFAULT_THREADS_NUMBER     4
+#define DEFAULT_TASK_THRESHOLD     2 // minimum number of links in a subdirectory to launch a new openmp task
 
 #define SHORTOPT_STR "fdt:D:rT:e:h"
 #define TOK_FIND_FILES          'f'
@@ -15,6 +16,7 @@
 #define TOK_DEPTH               'D'
 #define TOK_COLOR               'c'
 #define TOK_THREADS             'T'
+#define TOK_TASK_THRESHOLD      'k'
 #define TOK_INC_MAX             'I'
 #define TOK_EXCLUDE             'e'
 #define TOK_NO_EXCLUDE          'E'
@@ -36,6 +38,7 @@ struct option long_options[] = {
   {"depth",            required_argument, 0, TOK_DEPTH           },
   {"color",            no_argument,       0, TOK_COLOR           },
   {"threads",          required_argument, 0, TOK_THREADS         },
+  {"task-threshold",   required_argument, 0, TOK_TASK_THRESHOLD  },
   {"inc-max-fd",       no_argument,       0, TOK_INC_MAX         },
   {"exclude",          required_argument, 0, TOK_EXCLUDE         },
   {"no-exclude",       no_argument,       0, TOK_NO_EXCLUDE      },
@@ -66,6 +69,8 @@ void print_help()
     "  -r, --reverse           : reverse the order.\n"
     "      --color             : colorize output name (toggle on,off).\n"
     "  -T, --threads <int>     : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
+    "      --task-threshold    : minimum number of links in a subdirectory to launch a new openmp task.\n"
+    "                            empty folders have 2 links (values <= 2 always launch a new task).\n"
     "      --inc-max-fd        : increase the maximum number of files descriptors opened\n"
     "                            at the same time (may be necessary with lot of threads).\n"
     "  -e, --exclude <path>    : exclude directory. `*` match multiple characters, and `?` match one.\n"
@@ -92,18 +97,19 @@ struct parsed_options default_options()
   char* exclude_list = (char*)calloc(INTIAL_EXCLUDE_LIST_SIZE, sizeof(char));
 
   return (struct parsed_options){
-    .options         = {
-      .exclude_list  = exclude_list,
-      .search_type   = SEARCH_FILES,
-      .sort_type     = SORT_MODIF,
-      .max_depth     = UINT64_MAX,
+    .options          = {
+      .exclude_list   = exclude_list,
+      .search_type    = SEARCH_FILES,
+      .sort_type      = SORT_MODIF,
+      .max_depth      = UINT64_MAX,
+      .task_threshold = DEFAULT_TASK_THRESHOLD,
       },
     .main_directory  = local_directory,
     .threads         = DEFAULT_THREADS_NUMBER,
     .reverse_order   = false,
     .color           = false,
-    .inc_max_fd      = false,
     .no_exclude      = false,
+    .inc_max_fd      = false,
 
     .activate_fzf    = false,
     .fzf_pane        = FZF_PANE_CAT,
@@ -134,6 +140,7 @@ void print_config(struct parsed_options *options)
     printf("max_depth:        %lu\n",  options->options.max_depth);
   printf("main_directory:   `%s`\n", options->main_directory);
   printf("threads:          %u \n",  options->threads);
+  printf("task_threshold:   %lu \n",  options->options.task_threshold);
   printf("reverse_order:    %s \n",  true_false_str[options->reverse_order]);
   printf("fzf:              %s \n",  true_false_str[options->activate_fzf]);
   printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
@@ -144,10 +151,15 @@ void print_config(struct parsed_options *options)
     printf("inc_max_fd:       %s \n",  true_false_str[options->inc_max_fd]);
   printf("no_exclude:       %s \n",  true_false_str[options->no_exclude]);
   char* cur = options->options.exclude_list;
-  while(*cur != '\0') {
-    printf("exclude:          `%s`\n", cur);
-    cur += strlen(cur) + 1;
-  } 
+  if(*cur != '\0'){
+    printf("exclude:          `%s`", cur);
+    while(1){
+      cur += strlen(cur) + 1;
+      if(*cur == '\0') break;
+      printf(", `%s`", cur);
+    }
+    printf("\n");
+  }
 }
 
 static inline
@@ -227,6 +239,9 @@ void parse_arg(struct parsed_options *options, int arg)
       break;
     case TOK_THREADS: // threads
       options->threads = atoi(optarg);
+      break;
+    case TOK_TASK_THRESHOLD: // task-threshold
+      options->options.task_threshold = atoll(optarg);
       break;
     case TOK_INC_MAX: // inc-max-fd
       options->inc_max_fd = true;

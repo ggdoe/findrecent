@@ -16,7 +16,6 @@
 #define GETDENTS_BUFSIZE     (32768)   // size of the buffer for the getdents syscall, allocated on the stack for each subdirectories explored, be aware of stack overflow (see in findrecent.c to change for heap allocated buffer)
 #define INNER_BUFSIZE        (32768)   // minimum: 256 (=NAME_MAX)
 #define INITIAL_ENTRIES_SIZE (32768)   // initial size of the number of entries allocation (for each thread)
-#define TASK_LINKS_THRESHOLD (7)       // minimum number of links in a subdirectory to launch a new openmp task
 
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
 #define checkptr(p) if(p == NULL) { perror(NULL); exit(1); }
@@ -71,13 +70,6 @@ enum search_type {
   SEARCH_DIRECTORIES=DT_DIR
 };
 
-struct work_options {
-  enum search_type search_type;
-  enum sort_type sort_type;
-  char* exclude_list;
-  size_t max_depth;
-};
-
 enum fzf_pane {
   FZF_PANE_NONE=0,
   FZF_PANE_CAT,
@@ -93,14 +85,22 @@ enum fzf_select {
   FZF_SELECT_EXEC
 };
 
+struct work_options {
+  enum search_type search_type;
+  enum sort_type sort_type;
+  char* exclude_list;
+  size_t max_depth;
+  uint64_t task_threshold;
+};
+
 struct parsed_options {
   struct work_options options;
   char* main_directory;
   uint32_t threads;
   bool reverse_order;
   bool color;
-  bool inc_max_fd;
   bool no_exclude;
+  bool inc_max_fd;
 
   bool activate_fzf;
   enum fzf_pane fzf_pane;
