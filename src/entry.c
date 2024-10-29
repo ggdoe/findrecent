@@ -56,16 +56,15 @@ void print_filename(struct filename *f)
 }
 
 static
-int print_dirname_color(struct filename *f, int depth)
+void print_dirname_color(struct filename *f, int depth)
 {
   if(f->pred == NULL){
-    printf("%s", f->name);
-    return (uint8_t)(DIR_COLOR_FUNCTION(depth)); // color code is function of depth max
+    const uint8_t color_val = DIR_COLOR_FUNCTION(depth); // color code is function of depth max
+    printf("\033[38;5;%hhum%s", color_val, f->name);
+    return;
   }
-  const uint8_t color_val = print_dirname_color(f->pred, depth+1);
-  printf("\033[38;5;%dm/%s", color_val, f->name);
-
-  return color_val;
+  print_dirname_color(f->pred, depth+1);
+  printf("/%s", f->name);
 }
 
 static inline
@@ -106,17 +105,14 @@ void print_list_entry(struct list_entries *restrict l, struct parsed_options *re
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     print_entry_info(e, options->options.sort_type);
 
-    if(activate_color && search_type == SEARCH_DIRECTORIES) {
+    if(search_type == SEARCH_DIRECTORIES && activate_color)
       print_dirname_color(e->name, 0);
-      printf("\033[0m");
-      putchar('\n');
-    }
     else {
       if(activate_color) printf("\033[%sm", e->color);
       print_filename(e->name);
-      if(activate_color) printf("\033[0m");
-      putchar('\n');
     }
+    if(activate_color) printf("\033[0m\n");
+    else               printf("\n");
   }
 }
 

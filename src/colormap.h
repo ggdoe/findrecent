@@ -35,7 +35,7 @@ error "gperf generated tables don't work with this execution character set. Plea
 #include <string.h>
 #include <stdio.h>
 
-#define DIR_COLOR_FUNCTION(n)  (8 + 17 * n)
+#define DIR_COLOR_FUNCTION(n)  (((3 + 19 * n) % 214) + 17) // valid color range: 17-230
 #define COLOR_EXEC             "38;5;208;1"
 #line 9 "colormap.gperf"
 

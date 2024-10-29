@@ -3,16 +3,18 @@
 set -e
 
 filename_gperf="colormap.gperf"
-filename_out="colormap.h"
+filename_out="$(dirname "$0")/colormap.h"
 remote_ls_colors="https://raw.githubusercontent.com/trapd00r/LS_COLORS/master/LS_COLORS" # nice
-curl -s $remote_ls_colors > LS_COLORS
+curl -s $remote_ls_colors > LS_COLORS_tmp
 
 default_color="\"1\""
-exec_color="$(cat LS_COLORS | awk '/^EXEC/{print $2}')"
+exec_color="$(cat LS_COLORS_tmp | awk '/^EXEC/{print $2}')"
+
+# manual color entries (must start with dot .)
 echo """
 .cu   38;5;42
 .conf 38;5;243
-""" >> LS_COLORS # manual color entries (must start with dot .)
+""" >> LS_COLORS_tmp 
 
 
 # creating gperf file
@@ -21,20 +23,21 @@ echo "%{
 #include <string.h>
 #include <stdio.h>
 
-#define DIR_COLOR_FUNCTION(n)  (8 + 17 * n)
+#define DIR_COLOR_FUNCTION(n)  (((3 + 19 * n) % 214) + 17) // valid color range: 17-230
 #define COLOR_EXEC             \"$exec_color\"
 %}
 struct colormap {const char* ext; const char* color;};
 %%" > $filename_gperf
-cat LS_COLORS | 
+cat LS_COLORS_tmp | 
 sed -n "/^\./s/^\.//p" | 
 sed -r "/\{|\}|\[|\]|\*/d" | 
 awk '{printf "%s, \"%s\"\n", $1, $2}' >> $filename_gperf
 echo %% >> $filename_gperf
 
 
-# remove key for gperf, only keeping values (color), 
-# because we dont care if we use the wrong color for unknown files (maybe that's a bad idea)
+# remove keys from gperf, only keeping values (color), 
+# because we dont care if we use the wrong color for unknown files (that may be a bad idea)
+# you may want increase -m option to improve quality of hashmap (exemple -m1000 if you have some time to spend)
 gperf --language C -t -C -N"get_color" -m20 $filename_gperf | 
 sed 's/{".\+", \(".\+"\)}/\1/' | # remove keys from wordlist
 sed 's/{""}/'$default_color'/g' | # replace empty values with $default_color
@@ -44,5 +47,4 @@ sed 's/struct colormap/char/' | # change type of the function
 sed '/wordlist\[key\]\.name/,+2d' | # do not check the key
 sed 's/return &wordlist/return wordlist/;s/return 0/return '$default_color'/ ' > $filename_out
 
-
-rm $filename_gperf LS_COLORS
+rm $filename_gperf LS_COLORS_tmp

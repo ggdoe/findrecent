@@ -1,5 +1,5 @@
 #include "defs.h"
-// #define ACTIVATE_HEAP_ALLOCATED_BUFFER
+#define ACTIVATE_HEAP_ALLOCATED_BUFFER
 
 struct linux_dirent64 {
     ino64_t        d_ino;    /* 64-bit inode number */

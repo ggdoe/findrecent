@@ -15,6 +15,7 @@ void launch_in_fzf(char** argv, struct parsed_options *options)
     "fzf", 
     "--ansi", 
     "--tac", 
+    // "--wrap", 
     "+s",
     "-d: ",                                              // delimiter is ': '
     options->fzf_search_date ? "--nth=1.." : "--nth=-1", // so that it dont search in the date 
