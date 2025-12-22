@@ -10,11 +10,11 @@ struct linux_dirent64 {
 };
 
 static struct list_entries init_list_entries();
-static void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct work_options *restrict options, const size_t depth);
+static void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *restrict options, const size_t depth);
 static inline bool match(const char *pattern, const char *str);
 static inline bool is_path_excluded(char* exclude_list, const char* filename);
 
-struct list_entries findrecent(char *restrict directory, const struct work_options *restrict options)
+struct list_entries findrecent(const struct options *options)
 {
   int nb_threads = omp_get_max_threads();
   struct list_task lt;
@@ -22,6 +22,7 @@ struct list_entries findrecent(char *restrict directory, const struct work_optio
   for(int i=0; i<nb_threads; i++)
     lt.l[i] = init_list_entries();
 
+  char *directory = options->main_directory;
   int fd = open64(directory, OPEN_FLAGS);
   check(fd);
   
@@ -57,7 +58,7 @@ struct list_entries findrecent(char *restrict directory, const struct work_optio
   return l;
 }
 
-void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct work_options *restrict options, const size_t depth)
+void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *restrict options, const size_t depth)
 {
   if(depth > options->max_depth) return;
 

@@ -91,19 +91,18 @@ void print_help()
 }
 
 static inline
-struct parsed_options default_options()
+struct options default_options()
 {
   static char local_directory[NAME_MAX] = ".";
   char* exclude_list = (char*)calloc(INTIAL_EXCLUDE_LIST_SIZE, sizeof(char));
 
-  return (struct parsed_options){
-    .options          = {
-      .exclude_list   = exclude_list,
-      .search_type    = SEARCH_FILES,
-      .sort_type      = SORT_MODIF,
-      .max_depth      = UINT64_MAX,
-      .task_threshold = DEFAULT_TASK_THRESHOLD,
-      },
+  return (struct options){
+    .exclude_list   = exclude_list,
+    .search_type    = SEARCH_FILES,
+    .sort_type      = SORT_MODIF,
+    .max_depth      = UINT64_MAX,
+    .task_threshold = DEFAULT_TASK_THRESHOLD,
+
     .main_directory  = local_directory,
     .threads         = DEFAULT_THREADS_NUMBER,
     .reverse_order   = false,
@@ -125,22 +124,22 @@ struct parsed_options default_options()
 }
 
 static
-void print_config(struct parsed_options *options)
+void print_config(struct options *options)
 {
   const char* true_false_str[] = { "false", "true"};
   const char* fzf_pane_str[]   = { "none", "cat", "bat" };
   const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open", "exec" };
   const char* sort_type_str[]  = { "creation", "access", "modification", "size" };
 
-  printf("search_type:      %s \n", (options->options.search_type == SEARCH_FILES) ? "file" : "directories");
-  printf("sort_type:        %s \n",  sort_type_str[options->options.sort_type]);
-  if(options->options.max_depth == UINT64_MAX)
+  printf("search_type:      %s \n", (options->search_type == SEARCH_FILES) ? "file" : "directories");
+  printf("sort_type:        %s \n",  sort_type_str[options->sort_type]);
+  if(options->max_depth == UINT64_MAX)
     printf("max_depth:        None\n");
   else
-    printf("max_depth:        %lu\n",  options->options.max_depth);
+    printf("max_depth:        %lu\n",  options->max_depth);
   printf("main_directory:   `%s`\n", options->main_directory);
   printf("threads:          %u \n",  options->threads);
-  printf("task_threshold:   %lu \n",  options->options.task_threshold);
+  printf("task_threshold:   %lu \n",  options->task_threshold);
   printf("reverse_order:    %s \n",  true_false_str[options->reverse_order]);
   printf("fzf:              %s \n",  true_false_str[options->activate_fzf]);
   printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
@@ -150,7 +149,7 @@ void print_config(struct parsed_options *options)
   if(options->inc_max_fd)
     printf("inc_max_fd:       %s \n",  true_false_str[options->inc_max_fd]);
   printf("no_exclude:       %s \n",  true_false_str[options->no_exclude]);
-  char* cur = options->options.exclude_list;
+  char* cur = options->exclude_list;
   if(*cur != '\0'){
     printf("exclude:          `%s`", cur);
     while(1){
@@ -163,11 +162,11 @@ void print_config(struct parsed_options *options)
 }
 
 static inline
-void push_exclude_path(struct parsed_options *options, const char* path)
+void push_exclude_path(struct options *options, const char* path)
 {
   uint32_t *count = &options->exclude_list_count;
   uint32_t *capa  = &options->exclude_list_capa;
-  char** exclude_list = &options->options.exclude_list;
+  char** exclude_list = &options->exclude_list;
   char buf[NAME_MAX];
   size_t len = 0;
 
@@ -205,7 +204,7 @@ void push_exclude_path(struct parsed_options *options, const char* path)
 }
 
 static inline
-void parse_arg(struct parsed_options *options, int arg)
+void parse_arg(struct options *options, int arg)
 {
   #define IF_ARG_MATCH(opt, match, val)                     \
       if(!strncmp(optarg, match, strlen(optarg))) opt = val;
@@ -213,16 +212,16 @@ void parse_arg(struct parsed_options *options, int arg)
   switch (arg)
   {
     case TOK_FIND_FILES: // find-files
-      options->options.search_type = SEARCH_FILES;
+      options->search_type = SEARCH_FILES;
       break;
     case TOK_FIND_DIRECTORIES: // find-directories
-      options->options.search_type = SEARCH_DIRECTORIES;
+      options->search_type = SEARCH_DIRECTORIES;
       break;
     case TOK_SORT_TYPE: // sort-type
-           IF_ARG_MATCH(options->options.sort_type, "access",       SORT_ACCESS)
-      else IF_ARG_MATCH(options->options.sort_type, "creation",     SORT_CREAT)
-      else IF_ARG_MATCH(options->options.sort_type, "modification", SORT_MODIF)
-      else IF_ARG_MATCH(options->options.sort_type, "size",         SORT_SIZE)
+           IF_ARG_MATCH(options->sort_type, "access",       SORT_ACCESS)
+      else IF_ARG_MATCH(options->sort_type, "creation",     SORT_CREAT)
+      else IF_ARG_MATCH(options->sort_type, "modification", SORT_MODIF)
+      else IF_ARG_MATCH(options->sort_type, "size",         SORT_SIZE)
       else {
         fprintf(stderr, "bad argument for sort-type: `%s`. options: `creation`, `access`, `modification`, `size`.\n", optarg);
         options->parsing_failed = true;
@@ -232,7 +231,7 @@ void parse_arg(struct parsed_options *options, int arg)
       options->reverse_order = !options->reverse_order; 
       break;
     case TOK_DEPTH: // depth
-      options->options.max_depth = atoi(optarg); 
+      options->max_depth = atoi(optarg); 
       break;
     case TOK_COLOR: // color
       options->color = !options->color;
@@ -241,7 +240,7 @@ void parse_arg(struct parsed_options *options, int arg)
       options->threads = atoi(optarg);
       break;
     case TOK_TASK_THRESHOLD: // task-threshold
-      options->options.task_threshold = atoll(optarg);
+      options->task_threshold = atoll(optarg);
       break;
     case TOK_INC_MAX: // inc-max-fd
       options->inc_max_fd = true;
@@ -285,7 +284,7 @@ void parse_arg(struct parsed_options *options, int arg)
     case TOK_NO_CONFIG: // remove config file
       if(!options->no_config){
         const bool parsing_failed = options->parsing_failed;
-        free(options->options.exclude_list);
+        free(options->exclude_list);
         *options = default_options();
         options->no_config = true;
         options->parsing_failed = parsing_failed;
@@ -299,7 +298,7 @@ void parse_arg(struct parsed_options *options, int arg)
 }
 
 static
-void parse_config_files(struct parsed_options *options)
+void parse_config_files(struct options *options)
 {
   char config_file[PATH_MAX] = {0};
 
@@ -390,10 +389,10 @@ void parse_config_files(struct parsed_options *options)
   options->no_config = false; // prevent to not be able to use no_config via options in case it was put in the config file.
 }
 
-struct parsed_options parse_options(int argc, char** argv)
+struct options parse_options(int argc, char** argv)
 {
   program_name = *argv;
-  struct parsed_options options = default_options();
+  struct options options = default_options();
   
   // process config file
   parse_config_files(&options);
@@ -424,7 +423,7 @@ struct parsed_options parse_options(int argc, char** argv)
     options.main_directory = argv[optind];
 
   if(options.no_exclude)
-    *options.options.exclude_list = '\0';
+    *options.exclude_list = '\0';
 
   if(options.parsing_failed) {
     fprintf(stderr, "error in command line options.\n");

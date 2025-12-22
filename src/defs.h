@@ -85,16 +85,13 @@ enum fzf_select {
   FZF_SELECT_EXEC
 };
 
-struct work_options {
+struct options {
   enum search_type search_type;
   enum sort_type sort_type;
   char* exclude_list;
   size_t max_depth;
   uint64_t task_threshold;
-};
-
-struct parsed_options {
-  struct work_options options;
+  
   char* main_directory;
   uint32_t threads;
   bool reverse_order;
@@ -115,14 +112,14 @@ struct parsed_options {
   uint32_t exclude_list_capa;
 };
 
-struct list_entries findrecent(char *restrict directory, const struct work_options *restrict options);
+struct list_entries findrecent(const struct options *options);
 struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads);
-void print_list_entry(struct list_entries *restrict l, struct parsed_options *restrict options);
+void print_list_entry(struct list_entries *restrict l, struct options *restrict options);
 void free_list_entries(struct list_entries *l);
 struct filename *push_buffer_filename(struct list_entries *restrict l, struct filename *restrict pred, const char *restrict name);
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum sort_type type);
 
-struct parsed_options parse_options(int argc, char** argv);
-void launch_in_fzf(char** argv, struct parsed_options *options);
+struct options parse_options(int argc, char** argv);
+void launch_in_fzf(char** argv, struct options *options);
 
 #endif // _DEFS_H_

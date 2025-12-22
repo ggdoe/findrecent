@@ -1,11 +1,11 @@
 #include "defs.h"
 
 static char* stringize_argv(char** argv);
-static void fill_preview_cmd(char* preview, struct parsed_options *options);
+static void fill_preview_cmd(char* preview, struct options *options);
 static void fill_reload_cmd(char* reload, char* cmd_argv);
-static void fill_select_cmd(char* select, struct parsed_options *options);
+static void fill_select_cmd(char* select, struct options *options);
 
-void launch_in_fzf(char** argv, struct parsed_options *options)
+void launch_in_fzf(char** argv, struct options *options)
 {
   char preview_cmd[512] = "";
   char reload_cmd[512] = "";
@@ -56,10 +56,10 @@ char* stringize_argv(char** argv)
   return cmd_argv;
 }
 
-void fill_preview_cmd(char* preview, struct parsed_options *options)
+void fill_preview_cmd(char* preview, struct options *options)
 {
   strcat(preview, "--preview=");
-  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE)
+  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE)
     strcat(preview, "ls -lth --color {-1}");
   else {
     switch (options->fzf_pane) {
@@ -82,11 +82,11 @@ void fill_reload_cmd(char* reload, char* cmd_argv)
   strcat(reload, ")");
 }
 
-void fill_select_cmd(char* select, struct parsed_options *options)
+void fill_select_cmd(char* select, struct options *options)
 {
   strcat(select, "--bind=enter:become(");
 
-  if(options->options.search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE)
+  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE)
     strcat(select, "ls -lth --color {-1}");
   else {
     switch (options->fzf_select) {
