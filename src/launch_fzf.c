@@ -108,7 +108,7 @@ void fill_select_cmd(char* select, struct options *options)
         strcat(select, 
         "echo {-1} | fzf "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
-        "--bind=enter:become:'eval $(echo $FZF_QUERY | sed \"s#%#\\{}#g;t;s#\\$# \\{}#\" )' "
+        "--bind=enter:become:'eval $([ -z $FZF_QUERY ] && FZF_QUERY=echo ; echo $FZF_QUERY | sed \"s#%#\\{}#g;t;s#\\$# \\{}#\" )' "
         "--disabled --height 5 --info hidden --no-separator --no-scrollbar "
         "--layout reverse --border --margin 1,5% --padding=1 --pointer \"\" "
         );
