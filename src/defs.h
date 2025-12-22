@@ -99,17 +99,17 @@ struct options {
   bool no_exclude;
   bool inc_max_fd;
 
-  bool activate_fzf;
   enum fzf_pane fzf_pane;
   enum fzf_select fzf_select;
+  bool activate_fzf;
   bool fzf_search_date;
 
   // private
   bool parsing_failed;
   bool print_config;
-  bool no_config;
   uint32_t exclude_list_count;
   uint32_t exclude_list_capa;
+  bool no_config;
 };
 
 struct list_entries findrecent(const struct options *options);
