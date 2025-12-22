@@ -39,12 +39,14 @@ echo %% >> $filename_gperf
 # because we dont care if we use the wrong color for unknown files (that may be a bad idea)
 # you may want increase -m option to improve quality of hashmap (exemple -m1000 if you have some time to spend)
 gperf --language C -t -C -N"get_color" -m20 $filename_gperf | 
-sed 's/{".\+", \(".\+"\)}/\1/' | # remove keys from wordlist
-sed 's/{""}/'$default_color'/g' | # replace empty values with $default_color
-sed '/struct colormap.*;$/d' | # remove struct def
-sed 's/struct colormap wordlist/char* wordlist/' | # change type of wordlist
-sed 's/struct colormap/char/' | # change type of the function
-sed '/wordlist\[key\]\.name/,+2d' | # do not check the key
-sed 's/return &wordlist/return wordlist/;s/return 0/return '$default_color'/ ' > $filename_out
+sed -e 's/{".\+", \(".\+"\)}/\1/'                                                    `# remove keys from wordlist`                \
+    -e 's/{""}/'$default_color'/g'                                                   `# replace empty values with $default_color` \
+    -e '/struct colormap.*;$/d'                                                      `# remove struct def`                        \
+    -e 's/struct colormap wordlist/char* wordlist/'                                  `# change type of wordlist`                  \
+    -e 's/struct colormap/char/'                                                     `# change type of the function`              \
+    -e '/wordlist\[key\]\.name/,+2d'                                                 `# do not check the key`                     \
+    -e 's/return &wordlist/return wordlist/;s/return 0/return '$default_color'/ '   `# change return type of wordlist`            \
+    -e '/(str, len)$/{s/str, len)//;n;s/register //;s/;/,/;n;s/register //;s/;/ )/}' `# remove old function style definition`     \
+> $filename_out 
 
 rm $filename_gperf LS_COLORS_tmp
