@@ -8,6 +8,7 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
   if(n >= l->cap) {
     l->entries = (struct entry*)realloc(l->entries, l->cap*2 * sizeof(struct entry));
     checkptr(l->entries);
+    memset(l->entries + l->cap, 0, l->cap * sizeof(struct entry));
     l->cap *= 2;
   }
 

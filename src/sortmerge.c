@@ -68,6 +68,7 @@ int cmp_date(const void *p1, const void *p2)
   const struct entry *e1 = p1;
   const struct entry *e2 = p2;
 
+  // technically this is not valid when comparing the filesize as date, but it will work since entry is initialize to zero.
   if (e1->date.tv_sec != e2->date.tv_sec)
     return (e1->date.tv_sec > e2->date.tv_sec) - (e1->date.tv_sec < e2->date.tv_sec);
   else
