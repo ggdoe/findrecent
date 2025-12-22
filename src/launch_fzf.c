@@ -17,7 +17,7 @@ void launch_in_fzf(char** argv, struct options *options)
     "--tac", 
     // "--wrap", 
     "+s",
-    "-d: ",                                              // delimiter is ': '
+    "-d\x1f ",                                              // delimiter is the 'unit separator' \x1f 
     options->fzf_search_date ? "--nth=1.." : "--nth=-1", // so that it dont search in the date 
 
     preview_cmd, 

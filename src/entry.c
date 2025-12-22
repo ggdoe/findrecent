@@ -77,7 +77,7 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
       size_t size = e->size;
       char symbols[] = {'B', 'K', 'M', 'G', 'T', 'P'}; 
       for(; (size>>(10*id))>=1024 && id < sizeof(symbols)/sizeof(char); id++);
-      printf("%10.2lf%c:  ", (double)size/(1<<(10*id)), symbols[id]); 
+      printf("%10.2lf%c:\x1f  ", (double)size/(1<<(10*id)), symbols[id]); 
       break;
     }
     default: {
@@ -86,7 +86,8 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
       ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
       const size_t len = strlen(buffer);
       buffer[len-1] = ':';
-      for(size_t i=len; i<fixed_length; i++)
+      buffer[len] = '\x1f';
+      for(size_t i=len+1; i<fixed_length; i++)
         buffer[i] = ' ';
       buffer[fixed_length] = '\0';
       printf("%s", buffer);
