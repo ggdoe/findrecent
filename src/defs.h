@@ -95,21 +95,24 @@ struct options {
   char* main_directory;
   uint32_t threads;
   bool reverse_order;
+  bool hide_date;
   bool color;
   bool no_exclude;
   bool inc_max_fd;
 
+  bool fzf_activate;
+  bool fzf_shorten_name;
+  bool fzf_wrap_entry;
   enum fzf_pane fzf_pane;
   enum fzf_select fzf_select;
-  bool activate_fzf;
   bool fzf_search_date;
 
   // private
-  bool parsing_failed;
   bool print_config;
+  bool parsing_failed;
+  bool no_config;
   uint32_t exclude_list_count;
   uint32_t exclude_list_capa;
-  bool no_config;
 };
 
 struct list_entries findrecent(const struct options *options);

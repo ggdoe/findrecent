@@ -12,13 +12,14 @@ void launch_in_fzf(char** argv, struct options *options)
   char select_cmd[512] = "";
 
   char* fzf_argv[] = {
-    "fzf", 
-    "--ansi", 
-    "--tac", 
-    // "--wrap", 
-    "+s",
-    "-d\x1f ",                                              // delimiter is the 'unit separator' \x1f 
+    "fzf",
+    "--ansi",                                            // for color
+    "--tac",                                             // revert order
+    "+s",                                                // do not sort result
+    "-d\x1f ",                                           // delimiter is the 'unit separator' \x1f 
+
     options->fzf_search_date ? "--nth=1.." : "--nth=-1", // so that it dont search in the date 
+    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",    // line break if the entry is too long
 
     preview_cmd, 
     reload_cmd, 

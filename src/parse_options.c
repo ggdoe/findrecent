@@ -8,11 +8,12 @@
 #define DEFAULT_THREADS_NUMBER     4
 #define DEFAULT_TASK_THRESHOLD     2 // minimum number of links in a subdirectory to launch a new openmp task
 
-#define SHORTOPT_STR "fdt:D:rT:e:h"
+#define SHORTOPT_STR "fdt:D:rT:He:h"
 #define TOK_FIND_FILES          'f'
 #define TOK_FIND_DIRECTORIES    'd'
 #define TOK_SORT_TYPE           't'
 #define TOK_REVERSE             'r'
+#define TOK_HIDE_DATE           'H'
 #define TOK_DEPTH               'D'
 #define TOK_COLOR               'c'
 #define TOK_THREADS             'T'
@@ -23,7 +24,8 @@
 #define TOK_FZF                 'F'
 #define TOK_FZF_PANE            'P'
 #define TOK_FZF_SELECT          'S'
-#define TOK_FZF_SEARCH_DATE     'H'
+#define TOK_FZF_SEARCH_DATE     'a'
+#define TOK_FZF_WRAP_ENTRY      'w'
 #define TOK_PRINT_CONFIG        'p'
 #define TOK_NO_CONFIG           'N'
 #define TOK_HELP                'h'
@@ -35,6 +37,7 @@ struct option long_options[] = {
   {"find-directories", no_argument,       0, TOK_FIND_DIRECTORIES},
   {"sort-type",        required_argument, 0, TOK_SORT_TYPE       },
   {"reverse",          no_argument,       0, TOK_REVERSE         },
+  {"hide-date",        no_argument,       0, TOK_HIDE_DATE       },
   {"depth",            required_argument, 0, TOK_DEPTH           },
   {"color",            no_argument,       0, TOK_COLOR           },
   {"threads",          required_argument, 0, TOK_THREADS         },
@@ -47,6 +50,7 @@ struct option long_options[] = {
   {"fzf-pane",         required_argument, 0, TOK_FZF_PANE        },
   {"fzf-select",       required_argument, 0, TOK_FZF_SELECT      },
   {"fzf-search-date",  no_argument,       0, TOK_FZF_SEARCH_DATE },
+  {"fzf-wrap-entry",   no_argument,       0, TOK_FZF_WRAP_ENTRY  },
   {"no-config",        no_argument,       0, TOK_NO_CONFIG       },
   {"help",             no_argument,       0, TOK_HELP            },
   {0, 0, 0, 0}
@@ -67,6 +71,7 @@ void print_help()
     "                            `access`, `modification` or `size` (default: `modification`).\n"
     "  -D, --depth <int>       : maximum depth of search.\n"
     "  -r, --reverse           : reverse the order.\n"
+    "  -H, --hide-date         : do not print the date (toggle on,off).\n"
     "      --color             : colorize output name (toggle on,off).\n"
     "  -T, --threads <int>     : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
     "      --task-threshold    : minimum number of links in a subdirectory to launch a new openmp task.\n"
@@ -80,6 +85,7 @@ void print_help()
     "      --fzf-select <str>  : action to execute after selection.\n"
     "                            options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
     "      --fzf-search-date   : enable search for date in fzf.\n"
+    "      --fzf-wrap-entry    : line break if entry is too long (toggle on,off).\n"
     "      --print-config      : show configuration.\n"
     "      --no-config         : do not use options from the config file `"CONFIG_FILE"`.\n"
     "  -h, --help              : show help.\n\n"
@@ -97,27 +103,29 @@ struct options default_options()
   char* exclude_list = (char*)calloc(INTIAL_EXCLUDE_LIST_SIZE, sizeof(char));
 
   return (struct options){
-    .exclude_list   = exclude_list,
-    .search_type    = SEARCH_FILES,
-    .sort_type      = SORT_MODIF,
-    .max_depth      = UINT64_MAX,
-    .task_threshold = DEFAULT_TASK_THRESHOLD,
+    .exclude_list       = exclude_list,
+    .search_type        = SEARCH_FILES,
+    .sort_type          = SORT_MODIF,
+    .max_depth          = UINT64_MAX,
+    .task_threshold     = DEFAULT_TASK_THRESHOLD,
 
-    .main_directory  = local_directory,
-    .threads         = DEFAULT_THREADS_NUMBER,
-    .reverse_order   = false,
-    .color           = false,
-    .no_exclude      = false,
-    .inc_max_fd      = false,
+    .main_directory     = local_directory,
+    .threads            = DEFAULT_THREADS_NUMBER,
+    .reverse_order      = false,
+    .hide_date          = false,
+    .color              = false,
+    .no_exclude         = false,
+    .inc_max_fd         = false,
 
-    .activate_fzf    = false,
-    .fzf_pane        = FZF_PANE_CAT,
-    .fzf_select      = FZF_SELECT_EXEC,
-    .fzf_search_date = false,
+    .fzf_activate       = false,
+    .fzf_wrap_entry     = false,
+    .fzf_pane           = FZF_PANE_CAT,
+    .fzf_select         = FZF_SELECT_EXEC,
+    .fzf_search_date    = false,
 
-    .parsing_failed  = false,
-    .print_config    = false,
-    .no_config       = false,
+    .print_config       = false,
+    .parsing_failed     = false,
+    .no_config          = false,
     .exclude_list_count = 0,
     .exclude_list_capa  = INTIAL_EXCLUDE_LIST_SIZE
   };
@@ -134,20 +142,22 @@ void print_config(struct options *options)
   printf("search_type:      %s \n", (options->search_type == SEARCH_FILES) ? "file" : "directories");
   printf("sort_type:        %s \n",  sort_type_str[options->sort_type]);
   if(options->max_depth == UINT64_MAX)
-    printf("max_depth:        None\n");
+    printf("max_depth:        none\n");
   else
     printf("max_depth:        %lu\n",  options->max_depth);
   printf("main_directory:   `%s`\n", options->main_directory);
   printf("threads:          %u \n",  options->threads);
   printf("task_threshold:   %lu \n",  options->task_threshold);
   printf("reverse_order:    %s \n",  true_false_str[options->reverse_order]);
-  printf("fzf:              %s \n",  true_false_str[options->activate_fzf]);
-  printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
-  printf("fzf-select:       %s \n",  fzf_select_str[options->fzf_select]);
-  printf("fzf-search-date:  %s \n",  true_false_str[options->fzf_search_date]);
+  printf("hide-date:        %s \n",  true_false_str[options->hide_date]);
   printf("color:            %s \n",  true_false_str[options->color]);
   if(options->inc_max_fd)
     printf("inc_max_fd:       %s \n",  true_false_str[options->inc_max_fd]);
+  printf("fzf:              %s \n",  true_false_str[options->fzf_activate]);
+  printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
+  printf("fzf-select:       %s \n",  fzf_select_str[options->fzf_select]);
+  printf("fzf-search-date:  %s \n",  true_false_str[options->fzf_search_date]);
+  printf("fzf-wrap-entry:   %s \n",  true_false_str[options->fzf_wrap_entry]);
   printf("no_exclude:       %s \n",  true_false_str[options->no_exclude]);
   char* cur = options->exclude_list;
   if(*cur != '\0'){
@@ -233,6 +243,9 @@ void parse_arg(struct options *options, int arg)
     case TOK_DEPTH: // depth
       options->max_depth = atoi(optarg); 
       break;
+    case TOK_HIDE_DATE: // hide-date
+      options->hide_date = !options->hide_date;
+      break;
     case TOK_COLOR: // color
       options->color = !options->color;
       break;
@@ -252,7 +265,7 @@ void parse_arg(struct options *options, int arg)
       options->no_exclude = true;
       break;
     case TOK_FZF: // fzf
-      options->activate_fzf = !options->activate_fzf;
+      options->fzf_activate = !options->fzf_activate;
       break;
     case TOK_FZF_PANE: // fzf-pane
            IF_ARG_MATCH(options->fzf_pane, "none", FZF_PANE_NONE)
@@ -277,6 +290,9 @@ void parse_arg(struct options *options, int arg)
       break;
     case TOK_FZF_SEARCH_DATE: // fzf-search-date
       options->fzf_search_date = !options->fzf_search_date;
+      break;
+    case TOK_FZF_WRAP_ENTRY: // fzf-warp-entry
+      options->fzf_wrap_entry = !options->fzf_wrap_entry;
       break;
     case TOK_PRINT_CONFIG: // help
       options->print_config = true;

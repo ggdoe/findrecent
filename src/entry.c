@@ -105,7 +105,9 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
 
   for(size_t i=0; i<n; i++){
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
-    print_entry_info(e, options->sort_type);
+    
+    if(!options->hide_date)
+      print_entry_info(e, options->sort_type);
 
     if(search_type == SEARCH_DIRECTORIES && activate_color)
       print_dirname_color(e->name, 0);
