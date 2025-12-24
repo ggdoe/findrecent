@@ -46,25 +46,35 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
 }
 
 static
-void print_filename(struct filename *f)
+void print_filename(struct filename *f, uint32_t count)
 {
   if(f->pred == NULL){
     printf("%s", f->name);
     return;
   }
-  print_filename(f->pred);
+  if (count == 1) {
+    printf(".../%s", f->name);
+    return;
+  }
+  print_filename(f->pred, count-1);
   printf("/%s", f->name);
 }
 
 static
-void print_dirname_color(struct filename *f, int depth)
+void print_dirname_color(struct filename *f, uint32_t count)
 {
   if(f->pred == NULL){
-    const uint8_t color_val = DIR_COLOR_FUNCTION(depth); // color code is function of depth max
+    const uint8_t color_val = DIR_COLOR_FUNCTION(count); // color code is function of depth max
     printf("\033[38;5;%hhum%s", color_val, f->name);
     return;
   }
-  print_dirname_color(f->pred, depth+1);
+  if(count == 1) {
+    for(struct filename *g=f ; (g=g->pred); count++);    // increase count until f->pred is NULL
+    const uint8_t color_val = DIR_COLOR_FUNCTION(count); // color code is function of depth max
+    printf("\033[38;5;%hhum.../%s", color_val, f->name);
+    return;
+  }
+  print_dirname_color(f->pred, count-1);
   printf("/%s", f->name);
 }
 
@@ -104,6 +114,8 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   const bool fzf_activate = options->fzf_activate;
   const enum sort_type sort_type = options->sort_type;
   const enum search_type search_type = options->search_type;
+  const uint32_t fzf_shorten_name = options->fzf_shorten_name;
+
   size_t n = l->n;
 
   for(size_t i=0; i<n; i++){
@@ -113,16 +125,19 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
       print_entry_info(e, sort_type);
 
     if(search_type == SEARCH_DIRECTORIES && activate_color)
-      print_dirname_color(e->name, 0);
+      print_dirname_color(e->name, fzf_shorten_name);
     else {
       if(activate_color) printf("\033[%sm", e->color);
-      print_filename(e->name);
+      print_filename(e->name, fzf_shorten_name);
     }
     if(activate_color) printf("\033[0m");
 
     if(fzf_activate) {
       printf("\x1f ");
-      print_filename(e->name, 0);
+      print_filename(e->name, 0); // print full filename
+      // TODO: print_dirname_color & print_filename should (maybe) fill a buffer, 
+      // to prevent a second traversing of the linked list here,
+      // and to do post process like replacing home dir by '~'
     }
 
     printf("\n");

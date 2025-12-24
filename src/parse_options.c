@@ -24,6 +24,7 @@
 #define TOK_FZF                 'F'
 #define TOK_FZF_PANE            'P'
 #define TOK_FZF_SELECT          'S'
+#define TOK_FZF_SHORTEN_NAME    's'
 #define TOK_FZF_SEARCH_DATE     'a'
 #define TOK_FZF_WRAP_ENTRY      'w'
 #define TOK_PRINT_CONFIG        'p'
@@ -49,6 +50,7 @@ struct option long_options[] = {
   {"fzf",              no_argument,       0, TOK_FZF             },
   {"fzf-pane",         required_argument, 0, TOK_FZF_PANE        },
   {"fzf-select",       required_argument, 0, TOK_FZF_SELECT      },
+  {"fzf-shorten-name", required_argument, 0, TOK_FZF_SHORTEN_NAME},
   {"fzf-search-date",  no_argument,       0, TOK_FZF_SEARCH_DATE },
   {"fzf-wrap-entry",   no_argument,       0, TOK_FZF_WRAP_ENTRY  },
   {"no-config",        no_argument,       0, TOK_NO_CONFIG       },
@@ -65,30 +67,31 @@ void print_help()
   printf(
     "%s: find recently modified files or directories.\n\n"
     "options:\n"
-    "  -f, --find-files        : find files (default).\n"
-    "  -d, --find-directories  : find directories.\n"
-    "  -t, --sort-type <str>   : change the sorting criterium, can be `creation`, \n"
-    "                            `access`, `modification` or `size` (default: `modification`).\n"
-    "  -D, --depth <int>       : maximum depth of search.\n"
-    "  -r, --reverse           : reverse the order.\n"
-    "  -H, --hide-date         : do not print the date (toggle on,off).\n"
-    "      --color             : colorize output name (toggle on,off).\n"
-    "  -T, --threads <int>     : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
-    "      --task-threshold    : minimum number of links in a subdirectory to launch a new openmp task.\n"
-    "                            empty folders have 2 links (values <= 2 always launch a new task).\n"
-    "      --inc-max-fd        : increase the maximum number of files descriptors opened\n"
-    "                            at the same time (may be necessary with lot of threads).\n"
-    "  -e, --exclude <path>    : exclude directory. `*` match multiple characters, and `?` match one.\n"
-    "      --no-exclude        : do not exclude any path.\n"
-    "      --fzf               : show in fzf (toggle on,off).\n"
-    "      --fzf-pane <str>    : activate fzf side pane.    options: `none`, `cat`, `bat`. (default: `cat`)\n"
-    "      --fzf-select <str>  : action to execute after selection.\n"
-    "                            options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
-    "      --fzf-search-date   : enable search for date in fzf.\n"
-    "      --fzf-wrap-entry    : line break if entry is too long (toggle on,off).\n"
-    "      --print-config      : show configuration.\n"
-    "      --no-config         : do not use options from the config file `"CONFIG_FILE"`.\n"
-    "  -h, --help              : show help.\n\n"
+    "  -f, --find-files             : find files (default).\n"
+    "  -d, --find-directories       : find directories.\n"
+    "  -t, --sort-type <str>        : change the sorting criterium, can be `creation`, \n"
+    "                                 `access`, `modification` or `size` (default: `modification`).\n"
+    "  -D, --depth <int>            : maximum depth of search.\n"
+    "  -r, --reverse                : reverse the order.\n"
+    "  -H, --hide-date              : do not print the date (toggle on,off).\n"
+    "      --color                  : colorize output name (toggle on,off).\n"
+    "  -T, --threads <int>          : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
+    "      --task-threshold         : minimum number of links in a subdirectory to launch a new openmp task.\n"
+    "                                 empty folders have 2 links (values <= 2 always launch a new task).\n"
+    "      --inc-max-fd             : increase the maximum number of files descriptors opened\n"
+    "                                 at the same time (may be necessary with lot of threads).\n"
+    "  -e, --exclude <path>         : exclude directory. `*` match multiple characters, and `?` match one.\n"
+    "      --no-exclude             : do not exclude any path.\n"
+    "      --fzf                    : show in fzf (toggle on,off).\n"
+    "      --fzf-pane <str>         : activate fzf side pane.    options: `none`, `cat`, `bat`. (default: `cat`)\n"
+    "      --fzf-select <str>       : action to execute after selection.\n"
+    "                                 options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
+    "      --fzf-shorten-name <int> : shorten the filepath shown (0 to desactivate).\n"
+    "      --fzf-search-date        : enable search for date in fzf.\n"
+    "      --fzf-wrap-entry         : line break if entry is too long (toggle on,off).\n"
+    "      --print-config           : show configuration.\n"
+    "      --no-config              : do not use options from the config file `"CONFIG_FILE"`.\n"
+    "  -h, --help                   : show help.\n\n"
 
     "fzf commands:\n"
     "  ctrl+r  : reload\n"
@@ -119,9 +122,10 @@ struct options default_options()
 
     .fzf_activate       = false,
     .fzf_wrap_entry     = false,
+    .fzf_search_date    = false,
+    .fzf_shorten_name   = 0,
     .fzf_pane           = FZF_PANE_CAT,
     .fzf_select         = FZF_SELECT_EXEC,
-    .fzf_search_date    = false,
 
     .print_config       = false,
     .parsing_failed     = false,
@@ -154,10 +158,11 @@ void print_config(struct options *options)
   if(options->inc_max_fd)
     printf("inc_max_fd:       %s \n",  true_false_str[options->inc_max_fd]);
   printf("fzf:              %s \n",  true_false_str[options->fzf_activate]);
-  printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
-  printf("fzf-select:       %s \n",  fzf_select_str[options->fzf_select]);
   printf("fzf-search-date:  %s \n",  true_false_str[options->fzf_search_date]);
   printf("fzf-wrap-entry:   %s \n",  true_false_str[options->fzf_wrap_entry]);
+  printf("fzf-shorten-name: %d \n",  options->fzf_shorten_name);
+  printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
+  printf("fzf-select:       %s \n",  fzf_select_str[options->fzf_select]);
   printf("no_exclude:       %s \n",  true_false_str[options->no_exclude]);
   char* cur = options->exclude_list;
   if(*cur != '\0'){
@@ -287,6 +292,9 @@ void parse_arg(struct options *options, int arg)
         fprintf(stderr, "bad argument for fzf-select: `%s`. options: `none`, `cat`, `bat`, `git`, `open`, `exec`.\n", optarg);
         options->parsing_failed = true;
       }
+      break;
+    case TOK_FZF_SHORTEN_NAME: // fzf-shorten-name
+      options->fzf_shorten_name = atoi(optarg);
       break;
     case TOK_FZF_SEARCH_DATE: // fzf-search-date
       options->fzf_search_date = !options->fzf_search_date;

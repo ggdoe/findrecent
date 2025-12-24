@@ -101,18 +101,18 @@ struct options {
   bool inc_max_fd;
 
   bool fzf_activate;
-  bool fzf_shorten_name;
   bool fzf_wrap_entry;
+  bool fzf_search_date;
+  uint32_t fzf_shorten_name;
   enum fzf_pane fzf_pane;
   enum fzf_select fzf_select;
-  bool fzf_search_date;
 
   // private
+  uint32_t exclude_list_count;
+  uint32_t exclude_list_capa;
   bool print_config;
   bool parsing_failed;
   bool no_config;
-  uint32_t exclude_list_count;
-  uint32_t exclude_list_capa;
 };
 
 struct list_entries findrecent(const struct options *options);
