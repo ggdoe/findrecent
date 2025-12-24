@@ -17,8 +17,8 @@ void launch_in_fzf(char** argv, struct options *options)
     "--tac",                                             // revert order
     "+s",                                                // do not sort result
     "-d\x1f ",                                           // delimiter is the 'unit separator' \x1f 
-
-    options->fzf_search_date ? "--nth=1.." : "--nth=-1", // so that it dont search in the date 
+    "--with-nth=..-2",                                   // last field is the non-shorten path to the file, and should not be displayed
+    options->fzf_search_date ? "--nth=1.." : "--nth=-1", // set fields to search in
     options->fzf_wrap_entry ? "--wrap" : "--no-wrap",    // line break if the entry is too long
 
     preview_cmd, 

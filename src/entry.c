@@ -100,14 +100,17 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
 {
   const bool reverse_order = options->reverse_order;
   const bool activate_color = options->color;
+  const bool hide_date = options->hide_date;
+  const bool fzf_activate = options->fzf_activate;
+  const enum sort_type sort_type = options->sort_type;
   const enum search_type search_type = options->search_type;
   size_t n = l->n;
 
   for(size_t i=0; i<n; i++){
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     
-    if(!options->hide_date)
-      print_entry_info(e, options->sort_type);
+    if(!hide_date)
+      print_entry_info(e, sort_type);
 
     if(search_type == SEARCH_DIRECTORIES && activate_color)
       print_dirname_color(e->name, 0);
@@ -115,8 +118,14 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
       if(activate_color) printf("\033[%sm", e->color);
       print_filename(e->name);
     }
-    if(activate_color) printf("\033[0m\n");
-    else               printf("\n");
+    if(activate_color) printf("\033[0m");
+
+    if(fzf_activate) {
+      printf("\x1f ");
+      print_filename(e->name, 0);
+    }
+
+    printf("\n");
   }
 }
 
