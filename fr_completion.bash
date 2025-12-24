@@ -14,6 +14,7 @@ _fr_completions()
     -reverse
     -color
     -threads
+    -hide-date
     -inc-max-fd
     -task-threshold
     -exclude
@@ -21,7 +22,9 @@ _fr_completions()
     -fzf
     -fzf-pane
     -fzf-select
+    -fzf-shorten-name
     -fzf-search-date
+    -fzf-wrap-entry
     -print-config
     -no-config
     -help
