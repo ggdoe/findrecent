@@ -113,7 +113,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   const bool fzf_activate = options->fzf_activate;
   const enum sort_type sort_type = options->sort_type;
   const enum search_type search_type = options->search_type;
-  const uint32_t fzf_shorten_name = options->fzf_shorten_name;
+  const uint32_t fzf_shorten_name = (fzf_activate ? options->fzf_shorten_name : 0);
 
   size_t n = l->n;
 
