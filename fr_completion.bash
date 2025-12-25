@@ -37,7 +37,8 @@ _fr_completions()
     ;;
   -D | -?(-)depth | \
   -T | -?(-)threads | \
-       -?(-)task-threshold)
+       -?(-)task-threshold | \
+       -?(-)fzf-shorten-name)
     return 0
     ;;
   -e | -?(-)exclude)
