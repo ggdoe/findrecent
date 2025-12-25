@@ -87,7 +87,7 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
       size_t size = e->size;
       char symbols[] = {'B', 'K', 'M', 'G', 'T', 'P'}; 
       for(; (size>>(10*id))>=1024 && id < sizeof(symbols)/sizeof(char); id++);
-      printf("%10.2lf%c:\x1f  ", (double)size/(1<<(10*id)), symbols[id]); 
+      printf("%10.2lf%c:  ", (double)size/(1<<(10*id)), symbols[id]); 
       break;
     }
     default: {
@@ -96,8 +96,7 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
       ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
       const size_t len = strlen(buffer);
       buffer[len-1] = ':';
-      buffer[len] = '\x1f';
-      for(size_t i=len+1; i<fixed_length; i++)
+      for(size_t i=len; i<fixed_length; i++)
         buffer[i] = ' ';
       buffer[fixed_length] = '\0';
       printf("%s", buffer);
@@ -121,8 +120,10 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   for(size_t i=0; i<n; i++){
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     
-    if(!hide_date)
+    if(!hide_date) {
       print_entry_info(e, sort_type);
+      if(fzf_activate) putchar('\x1f');
+    }
 
     if(search_type == SEARCH_DIRECTORIES && activate_color)
       print_dirname_color(e->name, fzf_shorten_name);
@@ -136,7 +137,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
       printf("\x1f ");
       print_filename(e->name, 0); // print full filename
       // TODO: print_dirname_color & print_filename should (maybe) fill a buffer, 
-      // to prevent a second traversing of the linked list here,
+      // to prevent a second exploration of the linked list here,
       // and to do post process like replacing home dir by '~'
     }
 
