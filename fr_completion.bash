@@ -7,15 +7,15 @@ _fr_completions()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   opts=(
-    -find-files
-    -find-directories
+    -search-files
+    -search-directories
     -sort-type
     -depth
     -reverse
     -color
     -threads
     -hide-date
-    -inc-max-fd
+    -increase-max-fd
     -task-threshold
     -exclude
     -no-exclude
@@ -23,7 +23,7 @@ _fr_completions()
     -fzf-pane
     -fzf-select
     -fzf-shorten-name
-    -fzf-search-date
+    -fzf-search-in-date
     -fzf-wrap-entry
     -print-config
     -no-config

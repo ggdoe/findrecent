@@ -1,5 +1,5 @@
 # findrecent
-Search files and sort them. Almost as fast as regular find without sort.
+Search files and sort them. Almost as fast as GNU find (without sorting).
 
 <div align="center">
 <img width="719" alt="image" src="https://github.com/user-attachments/assets/466b8e5e-a23f-4f9b-a579-dece133e7661">
@@ -41,23 +41,23 @@ Here is an exemple of config file:
 ## Options
 | Option                     | Argument |     Description                                                                                                                                                        |
 | :------------------------- | :------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-f`, `--find-files`       |    -     | Find files (default).                                                                                                                                                  |
-| `-d`, `--find-directories` |    -     | Find directories.                                                                                                                                                      |
+| `-f`, `--search-files`       |    -     | Search for files (default).                                                                                                                                                  |
+| `-d`, `--search-directories` |    -     | Search for directories.                                                                                                                                                      |
 | `-t`, `--sort-type`        | `<str>`  | Change the sorting criterion, can be `creation`, `access`, `modification` or `size` (default: `modification`).                                                         |
 | `-D`, `--depth`            | `<int>`  | Maximum depth of search.                                                                                                                                               |
 | `-r`, `--reverse`          |    -     | Reverse the order.                                                                                                                                                     |
 | `--color`                  |    -     | Colorize output name (toggle on, off).                                                                                                                                 |
 | `--hide-date`              |    -     | Do not print date (or size).                                                                                                                                           |
 | `-T`, `--threads`          | `<int>`  | Set the number of threads during the file search. It does not affect much because printing is often the bottleneck.                                                    |
-| `--inc-max-fd`             |    -     | Increase the maximum number of file descriptors opened at the same time (may be necessary with a lot of threads).                                                      |
+| `--increase-max-fd`        |    -     | Increase the maximum number of file descriptors opened at the same time (may be necessary with a lot of threads).                                                      |
 | `--task-threshold`         | `<int>`  | Minimum number of links in a subdirectory to launch a new openmp task. Empty folders have 2 links, values less or equal than 2 always launch a new task, (default: 2). |
 | `-e`, `--exclude`          | `<path>` | Exclude directory. `*` matches multiple characters, and `?` matches one.                                                                                               |
 | `--no-exclude`             |    -     | Do not exclude any path.                                                                                                                                               |
 | `--fzf`                    |    -     | Show in `fzf` (toggle on, off).                                                                                                                                        |
 | `--fzf-pane`               | `<str>`  | Activate `fzf` side pane. Options: `none`, `cat`, `bat`. (default: `cat`)                                                                                              |
 | `--fzf-select`             | `<str>`  | Action to execute after selection. Options: `none`, `cat`, `bat`, `git`, `open`, `exec` (default: `exec`).                                                             |
-| `--fzf-wrap-entry`         |    -     | Enable the search for date in fzf.                                                                                                                                     |
-| `--fzf-search-date`        |    -     | Line break if entry is too long (toggle on,off).                                                                                                                       |
+| `--fzf-search-in-date`     |    -     | Enable the search for date in fzf.                                                                                                                                     |
+| `--fzf-wrap-entry`         |    -     | Line break if entry is too long (toggle on,off).                                                                                                                       |
 | `--fzf-shorten-name`       | `<int>`  | Shorten the filepath shown (up to `n` file, `0` to desactivate).                                                                                                       |
 | `--print-config`           |    -     | Show configuration.                                                                                                                                                    |
 | `--no-config`              |    -     | Do not use options from the config file (`$HOME/.config/findrecent/findrecent.conf`).                                                                                  |

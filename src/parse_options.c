@@ -34,27 +34,27 @@
 const char* program_name; // just to show in help
 static const
 struct option long_options[] = {
-  {"find-files",       no_argument,       0, TOK_FIND_FILES      },
-  {"find-directories", no_argument,       0, TOK_FIND_DIRECTORIES},
-  {"sort-type",        required_argument, 0, TOK_SORT_TYPE       },
-  {"reverse",          no_argument,       0, TOK_REVERSE         },
-  {"hide-date",        no_argument,       0, TOK_HIDE_DATE       },
-  {"depth",            required_argument, 0, TOK_DEPTH           },
-  {"color",            no_argument,       0, TOK_COLOR           },
-  {"threads",          required_argument, 0, TOK_THREADS         },
-  {"task-threshold",   required_argument, 0, TOK_TASK_THRESHOLD  },
-  {"inc-max-fd",       no_argument,       0, TOK_INC_MAX         },
-  {"exclude",          required_argument, 0, TOK_EXCLUDE         },
-  {"no-exclude",       no_argument,       0, TOK_NO_EXCLUDE      },
-  {"print-config",     no_argument,       0, TOK_PRINT_CONFIG    },
-  {"fzf",              no_argument,       0, TOK_FZF             },
-  {"fzf-pane",         required_argument, 0, TOK_FZF_PANE        },
-  {"fzf-select",       required_argument, 0, TOK_FZF_SELECT      },
-  {"fzf-shorten-name", required_argument, 0, TOK_FZF_SHORTEN_NAME},
-  {"fzf-search-date",  no_argument,       0, TOK_FZF_SEARCH_DATE },
-  {"fzf-wrap-entry",   no_argument,       0, TOK_FZF_WRAP_ENTRY  },
-  {"no-config",        no_argument,       0, TOK_NO_CONFIG       },
-  {"help",             no_argument,       0, TOK_HELP            },
+  {"search-files",       no_argument,       0, TOK_FIND_FILES      },
+  {"search-directories", no_argument,       0, TOK_FIND_DIRECTORIES},
+  {"sort-type",          required_argument, 0, TOK_SORT_TYPE       },
+  {"reverse",            no_argument,       0, TOK_REVERSE         },
+  {"hide-date",          no_argument,       0, TOK_HIDE_DATE       },
+  {"depth",              required_argument, 0, TOK_DEPTH           },
+  {"color",              no_argument,       0, TOK_COLOR           },
+  {"threads",            required_argument, 0, TOK_THREADS         },
+  {"task-threshold",     required_argument, 0, TOK_TASK_THRESHOLD  },
+  {"increase-max-fd",    no_argument,       0, TOK_INC_MAX         },
+  {"exclude",            required_argument, 0, TOK_EXCLUDE         },
+  {"no-exclude",         no_argument,       0, TOK_NO_EXCLUDE      },
+  {"print-config",       no_argument,       0, TOK_PRINT_CONFIG    },
+  {"fzf",                no_argument,       0, TOK_FZF             },
+  {"fzf-pane",           required_argument, 0, TOK_FZF_PANE        },
+  {"fzf-select",         required_argument, 0, TOK_FZF_SELECT      },
+  {"fzf-shorten-name",   required_argument, 0, TOK_FZF_SHORTEN_NAME},
+  {"fzf-search-in-date", no_argument,       0, TOK_FZF_SEARCH_DATE },
+  {"fzf-wrap-entry",     no_argument,       0, TOK_FZF_WRAP_ENTRY  },
+  {"no-config",          no_argument,       0, TOK_NO_CONFIG       },
+  {"help",               no_argument,       0, TOK_HELP            },
   {0, 0, 0, 0}
 };
 
@@ -67,8 +67,8 @@ void print_help()
   printf(
     "%s: find recently modified files or directories.\n\n"
     "options:\n"
-    "  -f, --find-files             : find files (default).\n"
-    "  -d, --find-directories       : find directories.\n"
+    "  -f, --search-files           : search for files (default).\n"
+    "  -d, --search-directories     : search for directories.\n"
     "  -t, --sort-type <str>        : change the sorting criterium, can be `creation`, \n"
     "                                 `access`, `modification` or `size` (default: `modification`).\n"
     "  -D, --depth <int>            : maximum depth of search.\n"
@@ -78,7 +78,7 @@ void print_help()
     "  -T, --threads <int>          : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
     "      --task-threshold         : minimum number of links in a subdirectory to launch a new openmp task.\n"
     "                                 empty folders have 2 links (values <= 2 always launch a new task).\n"
-    "      --inc-max-fd             : increase the maximum number of files descriptors opened\n"
+    "      --increase-max-fd        : increase the maximum number of files descriptors opened\n"
     "                                 at the same time (may be necessary with lot of threads).\n"
     "  -e, --exclude <path>         : exclude directory. `*` match multiple characters, and `?` match one.\n"
     "      --no-exclude             : do not exclude any path.\n"
@@ -87,7 +87,7 @@ void print_help()
     "      --fzf-select <str>       : action to execute after selection.\n"
     "                                 options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
     "      --fzf-shorten-name <int> : shorten the filepath shown (up to `n` file, `0` to desactivate).\n"
-    "      --fzf-search-date        : enable the search for date in fzf.\n"
+    "      --fzf-search-in-date     : enable the search for date in fzf.\n"
     "      --fzf-wrap-entry         : line break if entry is too long (toggle on,off).\n"
     "      --print-config           : show configuration.\n"
     "      --no-config              : do not use options from the config file `"CONFIG_FILE"`.\n"
