@@ -3,11 +3,6 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 
-#define INTIAL_EXCLUDE_LIST_SIZE   4096
-#define CONFIG_FILE  "~/.config/findrecent/findrecent.conf"
-#define DEFAULT_THREADS_NUMBER     4
-#define DEFAULT_TASK_THRESHOLD     2 // minimum number of links in a subdirectory to launch a new openmp task
-
 #define SHORTOPT_STR "fdt:D:rT:He:h"
 #define TOK_FIND_FILES          'f'
 #define TOK_FIND_DIRECTORIES    'd'
@@ -30,6 +25,7 @@
 #define TOK_PRINT_CONFIG        'p'
 #define TOK_NO_CONFIG           'N'
 #define TOK_HELP                'h'
+#define TOK_VERSION             'V'
 
 const char* program_name; // just to show in help
 static const
@@ -55,6 +51,7 @@ struct option long_options[] = {
   {"fzf-wrap-entry",     no_argument,       0, TOK_FZF_WRAP_ENTRY  },
   {"no-config",          no_argument,       0, TOK_NO_CONFIG       },
   {"help",               no_argument,       0, TOK_HELP            },
+  {"version",            no_argument,       0, TOK_VERSION         },
   {0, 0, 0, 0}
 };
 
@@ -91,7 +88,8 @@ void print_help()
     "      --fzf-wrap-entry         : line break if entry is too long (toggle on,off).\n"
     "      --print-config           : show configuration.\n"
     "      --no-config              : do not use options from the config file `"CONFIG_FILE"`.\n"
-    "  -h, --help                   : show help.\n\n"
+    "  -h, --help                   : show help.\n"
+    "      --version                : print version.\n\n"
 
     "fzf commands:\n"
     "  ctrl+r  : reload\n"
@@ -317,6 +315,9 @@ void parse_arg(struct options *options, int arg)
       break;
     case TOK_HELP:
       print_help();
+      exit(0);
+    case TOK_VERSION:
+      printf("%s v%s\n", program_name, PRGM_VERSION);
       exit(0);
   }
 }

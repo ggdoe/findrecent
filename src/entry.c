@@ -122,7 +122,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
     
     if(!hide_date) {
       print_entry_info(e, sort_type);
-      if(fzf_activate) putchar('\x1f');
+      if(fzf_activate) printf("\x1f");
     }
 
     if(search_type == SEARCH_DIRECTORIES && activate_color)

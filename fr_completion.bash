@@ -28,6 +28,7 @@ _fr_completions()
     -print-config
     -no-config
     -help
+    -version
   )
 
   case "${prev}" in
