@@ -47,7 +47,7 @@ Here is an exemple of config file:
 | `-D`, `--depth`              | `<int>`  | Maximum depth of search.                                                                                                                                               |
 | `-r`, `--reverse`            |    -     | Reverse the order.                                                                                                                                                     |
 | `--color`                    |    -     | Colorize output name (toggle on, off).                                                                                                                                 |
-| `--hide-date`                |    -     | Do not print date (or size).                                                                                                                                           |
+| `-H`, `--hide-date`          |    -     | Do not print date (or size).                                                                                                                                           |
 | `-T`, `--threads`            | `<int>`  | Set the number of threads during the file search. It does not affect much because printing is often the bottleneck.                                                    |
 | `--increase-max-fd`          |    -     | Increase the maximum number of file descriptors opened at the same time (may be necessary with a lot of threads).                                                      |
 | `--task-threshold`           | `<int>`  | Minimum number of links in a subdirectory to launch a new openmp task. Empty folders have 2 links, values less or equal than 2 always launch a new task, (default: 2). |
