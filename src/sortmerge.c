@@ -1,8 +1,12 @@
 #include "defs.h"
 
-static int cmp_date(const void *p1, const void *p2);
-static void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_threads);
+// `sort then merge` seems to be slightly faster.
+// #define MERGE_THEN_SORT // `merge then sort` or `sort then merge`
 
+static int cmp_date(const void *p1, const void *p2);
+#ifndef MERGE_THEN_SORT
+static void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_threads);
+#endif
 
 struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
 {
@@ -25,7 +29,7 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads)
   l.buffer.n = nb_buffer;
 
 
-#if 0 // merge then qsort (slower?)
+#ifdef MERGE_THEN_SORT
   int cur_b=0, cur_e=0;
   for(int i=0; i<nb_threads; i++) {
     const size_t nb = ll[i].buffer.n;
@@ -75,6 +79,7 @@ int cmp_date(const void *p1, const void *p2)
     return (e1->date.tv_nsec > e2->date.tv_nsec) - (e1->date.tv_nsec < e2->date.tv_nsec);
 }
 
+#ifndef MERGE_THEN_SORT
 void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_threads)
 {
   for(int i=0; i<nb_threads; i++){
@@ -101,3 +106,4 @@ void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_t
   }
   #undef get_entry
 }
+#endif
