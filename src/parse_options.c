@@ -460,8 +460,10 @@ struct options parse_options(int argc, char** argv)
     exit(0);
   }
   
-  omp_set_num_threads(options.threads);
-  // setvbuf(stdout, NULL, _IOFBF, 0); // full-buffering mode: remove flush after newline, something like 15% better perf on my sample but less pleasant to watch and useless for fzf
+  if(options.threads > 0)
+    omp_set_num_threads(options.threads);
+
+    // setvbuf(stdout, NULL, _IOFBF, 0); // full-buffering mode: remove flush after newline, something like 15% better perf on my sample but less pleasant to watch and useless for fzf
   
   if(options.inc_max_fd) {
     // increase maximum number of file descriptor opened at the same time. prevent crash when there are too many threads 
