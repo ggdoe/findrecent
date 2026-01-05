@@ -133,7 +133,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
     }
     if(activate_color) printf("\033[0m");
 
-    if(fzf_activate) {
+    if(fzf_activate && fzf_shorten_name != 0) {
       printf("\x1f ");
       print_filename(e->name, 0); // print full filename
       // TODO: print_dirname_color & print_filename should (maybe) fill a buffer, 

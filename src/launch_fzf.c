@@ -13,13 +13,13 @@ void launch_in_fzf(char** argv, struct options *options)
 
   char* fzf_argv[] = {
     "fzf",
-    "--ansi",                                            // for color
-    "--tac",                                             // revert order
-    "+s",                                                // do not sort result
-    "-d\x1f ",                                           // delimiter is the 'unit separator' \x1f 
-    "--with-nth=..-2",                                   // last field is the non-shorten path to the file, and should not be displayed
-    options->fzf_search_date ? "--nth=1.." : "--nth=-1", // set fields to search in
-    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",    // line break if the entry is too long
+    "--ansi",                                               // for color
+    "--tac",                                                // revert order
+    "+s",                                                   // do not sort result
+    "-d\x1f ",                                              // delimiter is the 'unit separator' \x1f 
+    options->hide_date ? "--with-nth=1" : "--with-nth=..2", // last field is the non-shorten path to the file, and should not be displayed
+    options->fzf_search_date ? "--nth=.." : "--nth=-1",     // set fields to search in
+    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",       // line break if the entry is too long
 
     preview_cmd, 
     reload_cmd, 
