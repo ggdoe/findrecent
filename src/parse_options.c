@@ -408,7 +408,7 @@ void parse_config_files(struct options *options)
   optind=0; // reset getopt for next use of getopt
 
   free(config_argv);
-  munmap(config_raw, stat.st_size*sizeof(char));
+  munmap(config_raw, (stat.st_size+1)*sizeof(char));
   close(fd);
 
   options->no_config = false; // prevent to not be able to use no_config via options in case it was put in the config file.
