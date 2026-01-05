@@ -92,7 +92,7 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
     }
     default: {
       char buffer[32];
-      const size_t fixed_length = 27;
+      const size_t fixed_length = 26;
       ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
       const size_t len = strlen(buffer);
       buffer[len-1] = ':';
@@ -122,7 +122,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
     
     if(!hide_date) {
       print_entry_info(e, sort_type);
-      if(fzf_activate) printf("\x1f");
+      if(fzf_activate) printf("\x1f ");
     }
 
     if(search_type == SEARCH_DIRECTORIES && activate_color)
