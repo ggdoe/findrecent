@@ -26,8 +26,8 @@ struct list_entries findrecent(const struct options *options)
   int fd = open64(directory, OPEN_FLAGS);
   check(fd);
   
-  struct stat64 s;
-  int ret = fstat64(fd, &s);
+  struct statx s;
+  int ret = statx(fd, "", AT_EMPTY_PATH | AT_STATX_DONT_SYNC, STATX_MODE | STATX_NLINK | options->sort_type, &s);
   check(ret);
 
   // remove a '/' when necessary to get the same output as 'find'
@@ -84,8 +84,8 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
       if(is_path_excluded(options->exclude_list, filename)) continue;
 
       if(d->d_type == options->search_type || d->d_type == DT_DIR){
-        struct stat64 s;
-        int ret = fstatat64(fd, filename, &s, 0);
+        struct statx s;
+        int ret = statx(fd, filename, AT_STATX_DONT_SYNC, STATX_MODE | STATX_NLINK | options->sort_type, &s);
         // check(ret);
         if(ret < 0) { 
           // ignore permissions denied
@@ -106,7 +106,7 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
             perror(NULL); exit(1); 
           }
           
-          if(s.st_nlink >= options->task_threshold){
+          if(s.stx_nlink >= options->task_threshold){
             #pragma omp task
             findrecent_work(lt, newfd, nextpath, options, depth+1);
           }

@@ -88,7 +88,7 @@ void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_t
   }
 
   #define get_entry(i) &ll[i].entries[ll[i].n]
-  const struct entry maximum_value = {.date={.tv_sec=INT64_MAX, .tv_nsec=INT64_MAX}, .name=NULL};
+  const struct entry maximum_value = {.date={.tv_sec=INT64_MAX, .tv_nsec=UINT32_MAX}, .name=NULL};
 
   for(size_t cur=0; cur<l->n; cur++) {
     const struct entry *minval = &maximum_value;

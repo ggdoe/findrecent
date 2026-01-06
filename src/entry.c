@@ -2,7 +2,7 @@
 #include <time.h>
 #include "colormap.h"
 
-void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum sort_type type)
+void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct statx *restrict s, enum sort_type type)
 {
   size_t n = l->n++;
   if(n >= l->cap) {
@@ -15,24 +15,27 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
   struct entry *e = &l->entries[n];
   switch (type)
   {
-  case SORT_CREAT:
-    e->date = s->st_ctim; // creation
+  case SORT_CHANGE:
+    e->date = s->stx_ctime; // change
     break;
   case SORT_ACCESS:
-    e->date = s->st_atim; // last access
+    e->date = s->stx_atime; // last access
     break;
   case SORT_MODIF: default:
-    e->date = s->st_mtim; // last modif
+    e->date = s->stx_mtime; // last modif
+    break;
+  case SORT_BIRTH:
+    e->date = s->stx_btime; // creation
     break;
   case SORT_SIZE:
-    e->size = s->st_size; // size
+    e->size = s->stx_size; // size
     break;
   }
 
   e->name = push_buffer_filename(l, pred, filename);
 
   // color
-  if(s->st_mode & S_IEXEC) {
+  if(s->stx_mode & S_IEXEC) {
     e->color = COLOR_EXEC;
     return;
   }
@@ -93,7 +96,7 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
     default: {
       char buffer[32];
       const size_t fixed_length = 26;
-      ctime_r(&e->date.tv_sec, buffer); // ctime put a newline at end
+      ctime_r((time_t*)&e->date.tv_sec, buffer); // ctime put a newline at end
       const size_t len = strlen(buffer);
       buffer[len-1] = ':';
       for(size_t i=len; i<fixed_length; i++)

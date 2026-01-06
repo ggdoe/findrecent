@@ -46,7 +46,7 @@ struct filename{
 
 struct entry {
   union {
-    struct timespec date;
+    struct statx_timestamp date;
     size_t size;
   };
   struct filename *name;
@@ -65,10 +65,11 @@ struct list_task {
 };
 
 enum sort_type {
-  SORT_CREAT=0,
-  SORT_ACCESS,
-  SORT_MODIF,
-  SORT_SIZE
+  SORT_CHANGE = STATX_CTIME,
+  SORT_ACCESS = STATX_ATIME,
+  SORT_MODIF  = STATX_MTIME,
+  SORT_BIRTH  = STATX_BTIME,
+  SORT_SIZE   = STATX_SIZE
 };
 
 enum search_type {
@@ -126,7 +127,7 @@ struct list_entries merge_sort_list_task(struct list_task *lt, int nb_threads);
 void print_list_entry(struct list_entries *restrict l, struct options *restrict options);
 void free_list_entries(struct list_entries *l);
 struct filename *push_buffer_filename(struct list_entries *restrict l, struct filename *restrict pred, const char *restrict name);
-void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct stat64 *restrict s, enum sort_type type);
+void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct statx *restrict s, enum sort_type type);
 
 struct options parse_options(int argc, char** argv);
 void launch_in_fzf(char** argv, struct options *options);
