@@ -43,7 +43,7 @@ Here is an exemple of config file:
 | :--------------------------- | :------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-f`, `--search-files`       |    -     | Search for files (default).                                                                                                                                            |
 | `-d`, `--search-directories` |    -     | Search for directories.                                                                                                                                                |
-| `-t`, `--sort-type`          | `<str>`  | Change the sorting criterion, can be `creation`, `access`, `modification`, `inod-change` or `size` (default: `modification`).                                                         |
+| `-t`, `--sort-type`          | `<str>`  | Change the sorting criterion, can be `creation`, `access`, `modification`, `inode-change` or `size` (default: `modification`).                                         |
 | `-D`, `--depth`              | `<int>`  | Maximum depth of search.                                                                                                                                               |
 | `-r`, `--reverse`            |    -     | Reverse the order.                                                                                                                                                     |
 | `--color`                    |    -     | Colorize output name (toggle on, off).                                                                                                                                 |

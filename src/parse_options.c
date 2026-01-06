@@ -67,7 +67,7 @@ void print_help()
     "  -f, --search-files           : search for files (default).\n"
     "  -d, --search-directories     : search for directories.\n"
     "  -t, --sort-type <str>        : change the sorting criterium, can be `creation`, `access`, \n"
-    "                                 `modification`, `inod-change` or `size` (default: `modification`).\n"
+    "                                 `modification`, `inode-change` or `size` (default: `modification`).\n"
     "  -D, --depth <int>            : maximum depth of search.\n"
     "  -r, --reverse                : reverse the order.\n"
     "  -H, --hide-date              : do not print the date (toggle on,off).\n"
@@ -232,12 +232,12 @@ void parse_arg(struct options *options, int arg)
       break;
     case TOK_SORT_TYPE: // sort-type
            IF_ARG_MATCH(options->sort_type, "access",       SORT_ACCESS)
-      else IF_ARG_MATCH(options->sort_type, "inod-change",  SORT_CHANGE)
+      else IF_ARG_MATCH(options->sort_type, "inode-change",  SORT_CHANGE)
       else IF_ARG_MATCH(options->sort_type, "modification", SORT_MODIF)
       else IF_ARG_MATCH(options->sort_type, "creation",     SORT_BIRTH)
       else IF_ARG_MATCH(options->sort_type, "size",         SORT_SIZE)
       else {
-        fprintf(stderr, "bad argument for sort-type: `%s`. options: `creation`, `access`, `modification`, `inod-change`, `size`.\n", optarg);
+        fprintf(stderr, "bad argument for sort-type: `%s`. options: `creation`, `access`, `modification`, `inode-change`, `size`.\n", optarg);
         options->parsing_failed = true;
       }
       break;

@@ -33,7 +33,7 @@ _fr_completions()
 
   case "${prev}" in
   -t | -?(-)sort-type)
-    COMPREPLY=( $(compgen -W "creation access modification inod-change size" -- "$cur") )
+    COMPREPLY=( $(compgen -W "creation access modification inode-change size" -- "$cur") )
     return 0
     ;;
   -D | -?(-)depth | \
