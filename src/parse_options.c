@@ -139,29 +139,35 @@ void print_config(struct options *options)
   const char* true_false_str[] = { "false", "true"};
   const char* fzf_pane_str[]   = { "none", "cat", "bat" };
   const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open", "exec" };
-  const char* sort_type_str[]  = { "creation", "access", "modification", "size" };
+  const char* sort_type_str[]  = { "creation", "access", "modification", "inode-change", "size" };
+  const size_t sort_type_id = 
+        options->sort_type == SORT_BIRTH   ? 0 :
+        options->sort_type == SORT_ACCESS  ? 1 :
+        options->sort_type == SORT_MODIF   ? 2 :
+        options->sort_type == SORT_CHANGE  ? 3 :
+    /*  options->sort_type == SORT_SIZE */   4;
 
-  printf("search_type:      %s \n", (options->search_type == SEARCH_FILES) ? "file" : "directories");
-  printf("sort_type:        %s \n",  sort_type_str[options->sort_type]);
+  printf("search_type:      %s \n",  (options->search_type == SEARCH_FILES) ? "file" : "directories");
+  printf("sort_type:        %s \n",   sort_type_str[sort_type_id]);
   if(options->max_depth == UINT64_MAX)
     printf("max_depth:        none\n");
   else
-    printf("max_depth:        %lu\n",  options->max_depth);
-  printf("main_directory:   `%s`\n", options->main_directory);
-  printf("threads:          %u \n",  options->threads);
+    printf("max_depth:        %lu\n", options->max_depth);
+  printf("main_directory:   `%s`\n",  options->main_directory);
+  printf("threads:          %u \n",   options->threads);
   printf("task_threshold:   %lu \n",  options->task_threshold);
-  printf("reverse_order:    %s \n",  true_false_str[options->reverse_order]);
-  printf("hide-date:        %s \n",  true_false_str[options->hide_date]);
-  printf("color:            %s \n",  true_false_str[options->color]);
+  printf("reverse_order:    %s \n",   true_false_str[options->reverse_order]);
+  printf("hide-date:        %s \n",   true_false_str[options->hide_date]);
+  printf("color:            %s \n",   true_false_str[options->color]);
   if(options->inc_max_fd)
-    printf("inc_max_fd:       %s \n",  true_false_str[options->inc_max_fd]);
-  printf("fzf:              %s \n",  true_false_str[options->fzf_activate]);
-  printf("fzf-search-date:  %s \n",  true_false_str[options->fzf_search_date]);
-  printf("fzf-wrap-entry:   %s \n",  true_false_str[options->fzf_wrap_entry]);
-  printf("fzf-shorten-name: %d \n",  options->fzf_shorten_name);
-  printf("fzf-pane:         %s \n",  fzf_pane_str[options->fzf_pane]);
-  printf("fzf-select:       %s \n",  fzf_select_str[options->fzf_select]);
-  printf("no_exclude:       %s \n",  true_false_str[options->no_exclude]);
+    printf("inc_max_fd:       %s \n", true_false_str[options->inc_max_fd]);
+  printf("fzf:              %s \n",   true_false_str[options->fzf_activate]);
+  printf("fzf-search-date:  %s \n",   true_false_str[options->fzf_search_date]);
+  printf("fzf-wrap-entry:   %s \n",   true_false_str[options->fzf_wrap_entry]);
+  printf("fzf-shorten-name: %d \n",   options->fzf_shorten_name);
+  printf("fzf-pane:         %s \n",   fzf_pane_str[options->fzf_pane]);
+  printf("fzf-select:       %s \n",   fzf_select_str[options->fzf_select]);
+  printf("no_exclude:       %s \n",   true_false_str[options->no_exclude]);
   char* cur = options->exclude_list;
   if(*cur != '\0'){
     printf("exclude:          `%s`", cur);
@@ -219,8 +225,8 @@ void push_exclude_path(struct options *options, const char* path)
 static inline
 void parse_arg(struct options *options, int arg)
 {
-  #define IF_ARG_MATCH(opt, match, val)                     \
-      if(!strncmp(optarg, match, strlen(optarg))) opt = val;
+  #define ARG_MATCH(opt, match, val)                     \
+      (!strncmp(optarg, match, strlen(optarg))) opt = val;
 
   switch (arg)
   {
@@ -231,11 +237,11 @@ void parse_arg(struct options *options, int arg)
       options->search_type = SEARCH_DIRECTORIES;
       break;
     case TOK_SORT_TYPE: // sort-type
-           IF_ARG_MATCH(options->sort_type, "access",       SORT_ACCESS)
-      else IF_ARG_MATCH(options->sort_type, "inode-change",  SORT_CHANGE)
-      else IF_ARG_MATCH(options->sort_type, "modification", SORT_MODIF)
-      else IF_ARG_MATCH(options->sort_type, "creation",     SORT_BIRTH)
-      else IF_ARG_MATCH(options->sort_type, "size",         SORT_SIZE)
+           if ARG_MATCH(options->sort_type, "access",       SORT_ACCESS)
+      else if ARG_MATCH(options->sort_type, "inode-change", SORT_CHANGE)
+      else if ARG_MATCH(options->sort_type, "modification", SORT_MODIF)
+      else if ARG_MATCH(options->sort_type, "creation",     SORT_BIRTH)
+      else if ARG_MATCH(options->sort_type, "size",         SORT_SIZE)
       else {
         fprintf(stderr, "bad argument for sort-type: `%s`. options: `creation`, `access`, `modification`, `inode-change`, `size`.\n", optarg);
         options->parsing_failed = true;
@@ -272,21 +278,21 @@ void parse_arg(struct options *options, int arg)
       options->fzf_activate = !options->fzf_activate;
       break;
     case TOK_FZF_PANE: // fzf-pane
-           IF_ARG_MATCH(options->fzf_pane, "none", FZF_PANE_NONE)
-      else IF_ARG_MATCH(options->fzf_pane, "cat",  FZF_PANE_CAT)
-      else IF_ARG_MATCH(options->fzf_pane, "bat",  FZF_PANE_BAT)
+           if ARG_MATCH(options->fzf_pane, "none", FZF_PANE_NONE)
+      else if ARG_MATCH(options->fzf_pane, "cat",  FZF_PANE_CAT)
+      else if ARG_MATCH(options->fzf_pane, "bat",  FZF_PANE_BAT)
       else {
         fprintf(stderr, "bad argument for fzf-pane: `%s`. options: `none`, `cat`, `bat`.\n", optarg);
         options->parsing_failed = true;
       }
       break;
     case TOK_FZF_SELECT: // fzf-select
-           IF_ARG_MATCH(options->fzf_select, "none", FZF_SELECT_NONE)
-      else IF_ARG_MATCH(options->fzf_select, "cat",  FZF_SELECT_CAT)
-      else IF_ARG_MATCH(options->fzf_select, "bat",  FZF_SELECT_BAT)
-      else IF_ARG_MATCH(options->fzf_select, "git",  FZF_SELECT_GIT)
-      else IF_ARG_MATCH(options->fzf_select, "open", FZF_SELECT_OPEN)
-      else IF_ARG_MATCH(options->fzf_select, "exec", FZF_SELECT_EXEC)
+           if ARG_MATCH(options->fzf_select, "none", FZF_SELECT_NONE)
+      else if ARG_MATCH(options->fzf_select, "cat",  FZF_SELECT_CAT)
+      else if ARG_MATCH(options->fzf_select, "bat",  FZF_SELECT_BAT)
+      else if ARG_MATCH(options->fzf_select, "git",  FZF_SELECT_GIT)
+      else if ARG_MATCH(options->fzf_select, "open", FZF_SELECT_OPEN)
+      else if ARG_MATCH(options->fzf_select, "exec", FZF_SELECT_EXEC)
       else {
         fprintf(stderr, "bad argument for fzf-select: `%s`. options: `none`, `cat`, `bat`, `git`, `open`, `exec`.\n", optarg);
         options->parsing_failed = true;
