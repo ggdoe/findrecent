@@ -4,7 +4,7 @@ static inline
 void* push_buffer(struct buffer *buffer, size_t len)
 {
   struct inner_buffer *cur = buffer->b[buffer->n-1];
-  
+
   if(cur->n+len >= INNER_BUFSIZE) {
     size_t n = buffer->n++;
     buffer->b = (struct inner_buffer**) realloc(buffer->b, (n+1)*sizeof(struct inner_buffer*));
@@ -26,7 +26,7 @@ static inline
 char* push_buffer_str(struct buffer *restrict buffer, const char *restrict str)
 {
   const size_t len = strlen(str)+1;
-  char *mem = push_buffer(buffer, len);
+  char *mem = push_buffer(buffer, (len+7) & ~7);
 
   return memcpy(mem, str, len*sizeof(char));
 }
