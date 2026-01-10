@@ -17,6 +17,7 @@ fzf can be enable with the option `--fzf`, fzf must be installed.
 - preview pane can be enable with `--fzf-pane <str>`, options are `none`, `cat`, `bat`. bat must be installed.
 - if enter is pressed, execute the action define by `--fzf-select <str>`, options are `none`, `cat`, `bat`, `git`, `open`, `exec`. 
 - press `ctrl+r` to reload.
+- press `ctrl+p` to toggle the pane visibility.
 
 ## Config file
 Command placed in the file `$HOME/.config/findrecent/findrecent.conf` are loaded before command line arguments. The default path is defined in `src/defs.h`.

@@ -93,6 +93,7 @@ void print_help()
 
     "fzf commands:\n"
     "  ctrl+r  : reload\n"
+    "  ctrl+p  : toggle pane visibility\n"
     "  enter   : select the entry, execute option `fzf-select`.\n"
     , program_name);
 }
