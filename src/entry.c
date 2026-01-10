@@ -107,6 +107,8 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
     
     print_filename(buf, e->name)[0] = '\0'; // load filename and null terminate the buffer
 
+    // TODO: replace $HOME by ~
+
     size_t depth = 0; // count number of '/' in buffer
     for(char* c=buf; *c != '\0'; c++) if (*c == '/') depth++;
 
