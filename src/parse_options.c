@@ -3,7 +3,7 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 
-#define SHORTOPT_STR "fdt:D:rT:He:h"
+#define SHORTOPT_STR "fdt:D:rT:He:S:h"
 #define TOK_FIND_FILES          'f'
 #define TOK_FIND_DIRECTORIES    'd'
 #define TOK_SORT_TYPE           't'
@@ -12,20 +12,20 @@
 #define TOK_DEPTH               'D'
 #define TOK_COLOR               'c'
 #define TOK_THREADS             'T'
-#define TOK_TASK_THRESHOLD      'k'
-#define TOK_INC_MAX             'I'
+#define TOK_TASK_THRESHOLD      0xF0
+#define TOK_INC_MAX             0xF1
 #define TOK_EXCLUDE             'e'
-#define TOK_NO_EXCLUDE          'E'
-#define TOK_FZF                 'F'
-#define TOK_FZF_PANE            'P'
-#define TOK_FZF_SELECT          'S'
-#define TOK_FZF_SHORTEN_NAME    's'
-#define TOK_FZF_SEARCH_DATE     'a'
-#define TOK_FZF_WRAP_ENTRY      'w'
-#define TOK_PRINT_CONFIG        'p'
-#define TOK_NO_CONFIG           'N'
+#define TOK_NO_EXCLUDE          0xF2
+#define TOK_FZF                 0xF3
+#define TOK_FZF_PANE            0xF4
+#define TOK_FZF_SELECT          0xF5
+#define TOK_FZF_SHORTEN_NAME    'S'
+#define TOK_FZF_SEARCH_DATE     0xF6
+#define TOK_FZF_WRAP_ENTRY      0xF7
+#define TOK_PRINT_CONFIG        0xF8
+#define TOK_NO_CONFIG           0xF9
 #define TOK_HELP                'h'
-#define TOK_VERSION             'V'
+#define TOK_VERSION             0xFF
 
 const char* program_name; // just to show in help
 static const
@@ -83,7 +83,7 @@ void print_help()
     "      --fzf-pane <str>         : activate fzf side pane.    options: `none`, `cat`, `bat`. (default: `cat`)\n"
     "      --fzf-select <str>       : action to execute after selection.\n"
     "                                 options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
-    "      --fzf-shorten-name <int> : shorten the filepath shown (up to `n` file, `0` to desactivate).\n"
+    "  -S, --fzf-shorten-name <int> : shorten the filepath shown (up to `n` file, `0` to desactivate).\n"
     "      --fzf-search-in-date     : enable the search for date in fzf.\n"
     "      --fzf-wrap-entry         : line break if entry is too long (toggle on,off).\n"
     "      --print-config           : show configuration.\n"

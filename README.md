@@ -58,7 +58,7 @@ Here is an exemple of config file:
 | `--fzf-select`               | `<str>`  | Action to execute after selection. Options: `none`, `cat`, `bat`, `git`, `open`, `exec` (default: `exec`).                                                             |
 | `--fzf-search-in-date`       |    -     | Enable the search for date in fzf.                                                                                                                                     |
 | `--fzf-wrap-entry`           |    -     | Line break if entry is too long (toggle on,off).                                                                                                                       |
-| `--fzf-shorten-name`         | `<int>`  | Shorten the filepath shown (up to `n` file, `0` to desactivate).                                                                                                       |
+| `-S`, `--fzf-shorten-name`   | `<int>`  | Shorten the filepath shown (up to `n` file, `0` to desactivate).                                                                                                       |
 | `--print-config`             |    -     | Show configuration.                                                                                                                                                    |
 | `--no-config`                |    -     | Do not use options from the config file (`$HOME/.config/findrecent/findrecent.conf`).                                                                                  |
 | `-h`, `--help`               |    -     | Show help.                                                                                                                                                             |
