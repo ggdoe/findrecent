@@ -100,7 +100,7 @@ void print_help()
 static inline
 struct options default_options()
 {
-  static char local_directory[NAME_MAX] = ".";
+  static char local_directory[PATH_MAX] = ".";
   char* exclude_list = (char*)calloc(INTIAL_EXCLUDE_LIST_SIZE, sizeof(char));
 
   return (struct options){
