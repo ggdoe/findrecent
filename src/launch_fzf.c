@@ -21,6 +21,7 @@ void launch_in_fzf(char** argv, struct options *options)
     "+s",                                                     // do not sort result
     "-d\x1f ",                                                // delimiter is the 'unit separator' \x1f 
     "--bind=ctrl-p:toggle-preview",                           // bind ctrl+p to toggle the pane visibility
+    "--bind=ctrl-l:toggle-preview-wrap",                      // bind ctrl+l to toggle the line wrap in the the pane
     options->hide_date ? "--with-nth=-1" : "--with-nth=1,-1", // last field is the non-shorten path to the file, and should not be displayed
     options->fzf_search_date ? "--nth=.." : "--nth=-1",       // set fields to search in
     options->fzf_wrap_entry ? "--wrap" : "--no-wrap",         // line break if the entry is too long
