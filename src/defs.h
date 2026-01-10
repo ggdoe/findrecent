@@ -17,7 +17,7 @@
 #define CONFIG_FILE  "~/.config/findrecent/findrecent.conf"
 #define DEFAULT_THREADS_NUMBER     4
 #define DEFAULT_TASK_THRESHOLD     2 // minimum number of links in a subdirectory to launch a new openmp task
-#define PRGM_VERSION               "1.1"
+#define PRGM_VERSION               "1.2"
 
 #define GETDENTS_BUFSIZE     (32768)   // size of the buffer for the getdents syscall, allocated on the stack for each subdirectories explored, be aware of stack overflow (see in findrecent.c to change for heap allocated buffer)
 #define INNER_BUFSIZE        (32768)   // minimum: 256 (=NAME_MAX)
