@@ -49,36 +49,17 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
 }
 
 static
-void print_filename(struct filename *f, uint32_t count)
+char* print_filename(char *buffer, struct filename *f)
 {
-  if(f->pred == NULL){
-    printf("%s", f->name);
-    return;
+  const size_t len = strlen(f->name);
+  
+  if(f->pred){
+    buffer = print_filename(buffer, f->pred);
+    *(buffer++) = '/'; // append a '/' and increase the buffer pointer
   }
-  if (count == 1) {
-    printf(".../%s", f->name);
-    return;
-  }
-  print_filename(f->pred, count-1);
-  printf("/%s", f->name);
-}
 
-static
-void print_dirname_color(struct filename *f, uint32_t count)
-{
-  if(f->pred == NULL){
-    const uint8_t color_val = DIR_COLOR_FUNCTION(count); // color code is function of depth max
-    printf("\033[38;5;%hhum%s", color_val, f->name);
-    return;
-  }
-  if(count == 1) {
-    for(struct filename *g=f ; (g=g->pred); count++);    // increase count until f->pred is NULL
-    const uint8_t color_val = DIR_COLOR_FUNCTION(count); // color code is function of depth max
-    printf("\033[38;5;%hhum.../%s", color_val, f->name);
-    return;
-  }
-  print_dirname_color(f->pred, count-1);
-  printf("/%s", f->name);
+  memcpy(buffer, f->name, len * sizeof(char));
+  return buffer + len;
 }
 
 static inline
@@ -117,34 +98,53 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   const enum sort_type sort_type = options->sort_type;
   const enum search_type search_type = options->search_type;
   const uint32_t fzf_shorten_name = (fzf_activate ? options->fzf_shorten_name : 0);
-
-  size_t n = l->n;
+  const size_t n = l->n;
+  char buffer[PATH_MAX];
 
   for(size_t i=0; i<n; i++){
+    char* buf = buffer + 1; // +1 because if fzf_shorten_name=1 and you search at the root '/' and there is a single character directory at the root, the files inside this directory will underflow the buffer when adding the ellipsis character
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     
+    print_filename(buf, e->name)[0] = '\0'; // load filename and null terminate the buffer
+
+    size_t depth = 0; // count number of '/' in buffer
+    for(char* c=buf; *c != '\0'; c++) if (*c == '/') depth++;
+
     if(!hide_date) {
       print_entry_info(e, sort_type);
-      if(fzf_activate) printf("\x1f ");
+      if(fzf_activate) printf("\x1f "); // print fzf separator
     }
 
-    if(search_type == SEARCH_DIRECTORIES && activate_color)
-      print_dirname_color(e->name, fzf_shorten_name);
-    else {
-      if(activate_color) printf("\033[%sm", e->color);
-      print_filename(e->name, fzf_shorten_name);
-    }
-    if(activate_color) printf("\033[0m");
-
+    // print the 'hidden' full filename in fzf in case fzf_shorten_name is set
     if(fzf_activate && fzf_shorten_name != 0) {
-      printf("\x1f ");
-      print_filename(e->name, 0); // print full filename
-      // TODO: print_dirname_color & print_filename should (maybe) fill a buffer, 
-      // to prevent a second exploration of the linked list here,
-      // and to do post process like replacing home dir by '~'
+      printf("%s\x1f ", buf);
+      
+      int64_t to_skip = depth - fzf_shorten_name;
+      if (to_skip > 0) {
+        // search position of the n-th '/' in buffer
+        for(;to_skip >= 0; to_skip--) {
+          char* slash = strchr(buf, '/');
+          if(slash != NULL)
+            buf = slash+1;
+        }
+        
+        // print ellipsis if filename was shorten
+        const char ellispis[] = "\xE2\x80\xA6/"; // ellipsis character
+        buf -= sizeof(ellispis) - 1;
+        memcpy(buf, ellispis, sizeof(ellispis) - 1);
+      }
     }
 
-    printf("\n");
+    if(activate_color && search_type == SEARCH_DIRECTORIES) {
+      const uint8_t color_val = DIR_COLOR_FUNCTION(depth);
+      printf("\033[38;5;%hhum%s\033[0m\n", color_val, buf);
+    }
+    else if (activate_color /* && search_type == SEARCH_FILES */) {
+      printf("\033[%sm%s\033[0m\n", e->color, buf);
+    }
+    else /* no color */ {
+      printf("%s\n", buf);
+    }
   }
 }
 

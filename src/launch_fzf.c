@@ -5,6 +5,9 @@ static void fill_preview_cmd(char* preview, struct options *options);
 static void fill_reload_cmd(char* reload, char* cmd_argv);
 static void fill_select_cmd(char* select, struct options *options);
 
+#define push_column_id(buffer) strcat(buffer, (options->hide_date ? "{1}" : "{2}"))
+
+
 void launch_in_fzf(char** argv, struct options *options)
 {
   char preview_cmd[512] = "";
@@ -13,13 +16,13 @@ void launch_in_fzf(char** argv, struct options *options)
 
   char* fzf_argv[] = {
     "fzf",
-    "--ansi",                                               // for color
-    "--tac",                                                // revert order
-    "+s",                                                   // do not sort result
-    "-d\x1f ",                                              // delimiter is the 'unit separator' \x1f 
-    options->hide_date ? "--with-nth=1" : "--with-nth=..2", // last field is the non-shorten path to the file, and should not be displayed
-    options->fzf_search_date ? "--nth=.." : "--nth=-1",     // set fields to search in
-    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",       // line break if the entry is too long
+    "--ansi",                                                 // for color
+    "--tac",                                                  // revert order
+    "+s",                                                     // do not sort result
+    "-d\x1f ",                                                // delimiter is the 'unit separator' \x1f 
+    options->hide_date ? "--with-nth=-1" : "--with-nth=1,-1", // last field is the non-shorten path to the file, and should not be displayed
+    options->fzf_search_date ? "--nth=.." : "--nth=-1",       // set fields to search in
+    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",         // line break if the entry is too long
 
     preview_cmd, 
     reload_cmd, 
@@ -60,15 +63,19 @@ char* stringize_argv(char** argv)
 void fill_preview_cmd(char* preview, struct options *options)
 {
   strcat(preview, "--preview=");
-  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE)
-    strcat(preview, "ls -lth --color {-1}");
+  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE) {
+    strcat(preview, "ls -lth --color "); 
+    push_column_id(preview);
+  }
   else {
     switch (options->fzf_pane) {
       case FZF_PANE_CAT:
-        strcat(preview, "cat {-1}");
+        strcat(preview, "cat ");
+        push_column_id(preview);
         break;
       case FZF_PANE_BAT:
-        strcat(preview, "bat --style='changes' --color always {-1}");
+        strcat(preview, "bat --style='changes' --color always ");
+        push_column_id(preview);
         break;
       case FZF_PANE_NONE: default:
         break;
@@ -87,27 +94,36 @@ void fill_select_cmd(char* select, struct options *options)
 {
   strcat(select, "--bind=enter:become(");
 
-  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE)
-    strcat(select, "ls -lth --color {-1}");
+  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE) {
+    strcat(select, "ls -lth --color ");
+    push_column_id(select);
+  }
   else {
     switch (options->fzf_select) {
       case FZF_SELECT_CAT:
-        strcat(select, "cat {-1})");
+        strcat(select, "cat )");
+        push_column_id(select);
         break;
       case FZF_SELECT_BAT:
-        strcat(select, "bat --style=changes,numbers --color always {-1}");
+        strcat(select, "bat --style=changes,numbers --color always ");
+        push_column_id(select);
         break;
       case FZF_SELECT_GIT:
         strcat(select, 
-        "if ( git -C $(dirname {-1}) rev-parse 2>/dev/null );"
+        "filename='");
+        push_column_id(select);
+        strcat(select, "'; "
+        "if ( git -C $(dirname $filename) rev-parse 2>/dev/null );"
         "then "
-        "git -C $(dirname {-1}) diff $(basename {-1});"
-        "else echo cannot show git changes, \\`{-1}\\` is not in a git directory. ; fi;"
+        "git -C $(dirname $filename) diff $(basename $filename);"
+        "else echo cannot show git changes, \\`$filename\\` is not in a git directory. ; fi;"
         );
         break;
       case FZF_SELECT_EXEC:
+        strcat(select, "echo ");
+        push_column_id(select);
         strcat(select, 
-        "echo {-1} | fzf "
+        "| fzf "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
         "--bind=enter:become:'"
           "eval $("
@@ -120,10 +136,12 @@ void fill_select_cmd(char* select, struct options *options)
         );
         break;
       case FZF_SELECT_OPEN:
-        strcat(select, "open {-1}");
+        strcat(select, "open ");
+        push_column_id(select);
         break;
       case FZF_SELECT_NONE: default:
-        strcat(select, "echo {-1}");
+        strcat(select, "echo ");
+        push_column_id(select);
         break;
     }
   }
