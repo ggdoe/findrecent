@@ -49,12 +49,12 @@ void push_entry(struct list_entries *restrict l, const char *restrict filename, 
 }
 
 static
-char* print_filename(char *buffer, struct filename *f)
+char* load_filepath(char *buffer, struct filename *f)
 {
   const size_t len = strlen(f->name);
   
   if(f->pred){
-    buffer = print_filename(buffer, f->pred);
+    buffer = load_filepath(buffer, f->pred);
     *(buffer++) = '/'; // append a '/' and increase the buffer pointer
   }
 
@@ -105,7 +105,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
     char* buf = buffer + 1; // +1 because if fzf_shorten_name=1 and you search at the root '/' and there is a single character directory at the root, the files inside this directory will underflow the buffer when adding the ellipsis character
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     
-    print_filename(buf, e->name)[0] = '\0'; // load filename and null terminate the buffer
+    load_filepath(buf, e->name)[0] = '\0'; // load filename and null terminate the buffer
 
     // TODO: replace $HOME by ~
 
