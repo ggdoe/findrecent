@@ -12,7 +12,7 @@ void launch_in_fzf(char** argv, struct options *options)
 {
   char preview_cmd[512] = "";
   char reload_cmd[512] = "";
-  char select_cmd[512] = "";
+  char select_cmd[1024] = "";
 
   char* fzf_argv[] = {
     "fzf",
@@ -122,16 +122,23 @@ void fill_select_cmd(char* select, struct options *options)
         );
         break;
       case FZF_SELECT_EXEC:
-        strcat(select, "echo ");
+        strcat(select, "printf -- \"%s\n\" ");
         push_column_id(select);
         strcat(select, 
         "| fzf "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
         "--bind=enter:become:'"
-          "eval $("
-            "[ -z \"$FZF_QUERY\" ] && FZF_QUERY=echo ; "
-            "echo $FZF_QUERY | tr % \x1f | sed \"s#\x1f#\\{}#g;t;s#\\$# \\{}#\" "
-          ")"
+        "printf -v file \"%q\" \\{}; "         // espace the filename
+        "cmd=$FZF_QUERY; "                     // get the command
+        "[ -z \"${cmd// }\"  ] && cmd=echo; "  // if empty command, use echo
+        "cmd=${cmd//%%/\x1f}; "                // escape %%
+        "if [ -z \"${cmd//[^%]}\" ]; then "    // if no % in command
+          "cmd=\"$cmd $file\"; "               // append the filename
+        "else "
+          "cmd=\"${cmd//%/$file}\"; "          // substitute % by filename
+        "fi; "
+        "cmd=\"${cmd//\x1f/%}\"; "             // restore escaped %%
+        "eval \"$cmd\"; "                      // execute command
         "' "
         "--disabled --height 5 --info hidden --no-separator --no-scrollbar "
         "--layout reverse --border --margin 1,5% --padding=1 --pointer \"\" "

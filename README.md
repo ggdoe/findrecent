@@ -72,5 +72,3 @@ Parallelized with omp task, each file directory is launched in a new task if the
 Colors are defined in `src/colormap.h`, which is generated with the script `src/gen_colormap.sh`. It use gperf and LS_COLORS file to generate an hashmap (credit: <https://github.com/trapd00r/LS_COLORS>).
 
 Directory color is function of the depth of exploration, color is define in `DIR_COLOR_FUNCTION(depth)` in `src/colormap.h` with is a simple function used to fill ansi color code  `\e[38;5;%dm`. 
-
-`--fzf-select exec` does not work on filename with specials characters (`#`, quotes).
