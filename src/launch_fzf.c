@@ -128,8 +128,10 @@ void fill_select_cmd(char* select, struct options *options)
         "| fzf "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
         "--bind=enter:become:'"
-        "printf -v file \"%q\" \\{}; "         // espace the filename
-        "cmd=$FZF_QUERY; "                     // get the command
+        "printf -v file \"%q\" \\{}; "          // espace the filename
+        "printf -v cmd \"%q\" \"$FZF_QUERY\"; " // get the command and escape it
+        "cmd=${cmd//\\\\ / }; "                 // unescape spaces
+        "cmd=${cmd//#/\\\\#}; "                 // escape # (printf does not do it)
         "[ -z \"${cmd// }\"  ] && cmd=echo; "  // if empty command, use echo
         "cmd=${cmd//%%/\x1f}; "                // escape %%
         "if [ -z \"${cmd//[^%]}\" ]; then "    // if no % in command
