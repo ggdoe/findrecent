@@ -107,7 +107,10 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
     
     load_filepath(buf, e->name)[0] = '\0'; // load filename and null terminate the buffer
 
-    // TODO: replace $HOME by ~
+    if(buf[0] == '\0') // if the filename is the root folder print `/`
+      (--buf)[0] = '/';
+    else if(buf[0] == '.' && buf[1] == '/' && buf[2] != '\0' && buf[2] != '/') // trim the leading `./` when possible
+      buf += 2;
 
     size_t depth = 0; // count number of '/' in buffer
     for(char* c=buf; *c != '\0'; c++) if (*c == '/') depth++;
@@ -122,7 +125,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
       printf("%s\x1f ", buf);
       
       int64_t to_skip = depth - fzf_shorten_name;
-      if (to_skip > 0) {
+      if (to_skip >= 0) {
         // search position of the n-th '/' in buffer
         for(;to_skip >= 0; to_skip--) {
           char* slash = strchr(buf, '/');
