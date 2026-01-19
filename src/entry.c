@@ -102,7 +102,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   char buffer[PATH_MAX];
 
   for(size_t i=0; i<n; i++){
-    char* buf = buffer + 1; // +1 because if fzf_shorten_name=1 and you search at the root '/' and there is a single character directory at the root, the files inside this directory will underflow the buffer when adding the ellipsis character
+    char* buf = buffer + 3; // +3 because if fzf_shorten_name=1 and you search at the root '/' and there is a single character directory at the root, the files inside this directory will underflow the buffer when adding the ellipsis character
     struct entry *e = (!reverse_order) ? &l->entries[i] : &l->entries[n - 1 - i];
     
     load_filepath(buf, e->name)[0] = '\0'; // load filename and null terminate the buffer
