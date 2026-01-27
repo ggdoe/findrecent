@@ -70,8 +70,8 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
       size_t id=0;
       size_t size = e->size;
       char symbols[] = {'B', 'K', 'M', 'G', 'T', 'P'}; 
-      for(; (size>>(10*id))>=1024 && id < sizeof(symbols)/sizeof(char); id++);
-      printf("%10.2lf%c:  ", (double)size/(1<<(10*id)), symbols[id]); 
+      for(; (size>>(10*id))>=1024 && id < sizeof(symbols)/sizeof(char) - 1; id++);
+      printf("%10.2lf%c:  ", (double)size/(1ULL<<(10*id)), symbols[id]); 
       break;
     }
     default: {
