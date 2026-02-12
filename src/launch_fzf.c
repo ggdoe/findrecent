@@ -17,7 +17,6 @@ void launch_in_fzf(char** argv, struct options *options)
   char* fzf_argv[] = {
     "fzf",
     "--ansi",                                                 // for color
-    "--tac",                                                  // revert order
     "+s",                                                     // do not sort result
     "-d\x1f ",                                                // delimiter is the 'unit separator' \x1f 
     "--bind=ctrl-p:toggle-preview",                           // bind ctrl+p to toggle the pane visibility
@@ -49,7 +48,7 @@ void launch_in_fzf(char** argv, struct options *options)
 
 char* stringize_argv(char** argv)
 {
-  int cmd_argc = 0;
+  int cmd_argc = sizeof(PRIVATE_FZF_OPT);
   for(char** cur=argv; *cur != NULL; cur++)
     cmd_argc += strlen(*cur) + 3; // 2 quotes, 1 space
 
@@ -59,6 +58,7 @@ char* stringize_argv(char** argv)
     strcat(cmd_argv, *cur);
     strcat(cmd_argv, "' ");
   }
+  strcat(cmd_argv, PRIVATE_FZF_OPT);
   return cmd_argv;
 }
 

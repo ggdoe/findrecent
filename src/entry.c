@@ -91,7 +91,7 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
 
 void print_list_entry(struct list_entries *restrict l, struct options *restrict options)
 {
-  const bool reverse_order = options->reverse_order;
+  const bool reverse_order = options->reverse_order ^ options->fzf_reorder;
   const bool activate_color = options->color;
   const bool hide_date = options->hide_date;
   const bool fzf_activate = options->fzf_activate;
