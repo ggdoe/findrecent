@@ -13,8 +13,8 @@ Source `fr_completion.bash` to enable bash completion.
 To add or change colors you can check `src/gen_colormap.sh`.
 
 ## fzf support
-fzf can be enable with the option `--fzf`, fzf must be installed.
-- preview pane can be enable with `--fzf-pane <str>`, options are `none`, `cat`, `bat`. bat must be installed.
+fzf can be enable with the option `--fzf`, fzf must be installed (<https://github.com/junegunn/fzf>).
+- preview pane can be enable with `--fzf-pane <str>`, options are `none`, `cat`, `bat`. bat must be installed (<https://github.com/sharkdp/bat>).
 - if enter is pressed, execute the action define by `--fzf-select <str>`, options are `none`, `cat`, `bat`, `git`, `open`, `exec`. 
 - press `ctrl+r` to reload.
 - press `ctrl+p` to toggle the pane visibility.
