@@ -26,8 +26,7 @@
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
 #define checkptr(p) if(p == NULL) { perror(NULL); exit(1); }
 
-// #define OPEN_FLAGS           O_DIRECTORY
-#define OPEN_FLAGS        O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY
+#define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
 
 #define PRIVATE_FZF_OPT "--~private-fzf-reorder"
 
