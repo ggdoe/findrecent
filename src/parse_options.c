@@ -351,7 +351,7 @@ void parse_config_files(struct options *options)
   else
     strcpy(config_file, CONFIG_FILE);
 
-  int fd = open(config_file, O_RDWR);
+  int fd = open64(config_file, O_RDWR);
   if(fd<0) return;
 
   struct stat64 stat;
@@ -461,6 +461,13 @@ struct options parse_options(int argc, char** argv)
   }
   else if (optind == argc-1)
     options.main_directory = argv[optind];
+
+  int fd = open64(options.main_directory, OPEN_FLAGS^O_NOFOLLOW);
+  if (fd < 0) {
+    fprintf(stderr, "cannot open `%s`: %s\n", options.main_directory, strerror(errno));
+    exit(1);
+  }
+  close(fd);
 
   if(options.no_exclude)
     *options.exclude_list = '\0';
