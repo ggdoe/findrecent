@@ -50,15 +50,15 @@ char* stringize_argv(char** argv)
 {
   int cmd_argc = sizeof(PRIVATE_FZF_OPT);
   for(char** cur=argv; *cur != NULL; cur++)
-    cmd_argc += strlen(*cur) + 3; // 2 quotes, 1 space
+    cmd_argc += strlen(*cur) + 1; // 1 space
 
   char* cmd_argv = (char*)calloc(cmd_argc+1, sizeof(char));
-  for(char** cur=argv; *cur != NULL; cur++){
-    strcat(cmd_argv, "'");
+  strcat(cmd_argv, *argv);
+  strcat(cmd_argv, " " PRIVATE_FZF_OPT);
+  for(char** cur=argv+1; *cur != NULL; cur++){
+    strcat(cmd_argv, " ");
     strcat(cmd_argv, *cur);
-    strcat(cmd_argv, "' ");
   }
-  strcat(cmd_argv, PRIVATE_FZF_OPT);
   return cmd_argv;
 }
 
