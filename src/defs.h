@@ -28,8 +28,6 @@
 
 #define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
 
-#define PRIVATE_FZF_OPT "--~private-fzf-reorder"
-
 struct inner_buffer{
   char mem[INNER_BUFSIZE];
   size_t n;
@@ -118,7 +116,6 @@ struct options {
   // private
   uint32_t exclude_list_count;
   uint32_t exclude_list_capa;
-  bool fzf_reorder;
   bool print_config;
   bool parsing_failed;
   bool no_config;

@@ -23,7 +23,7 @@ struct list_entries findrecent(const struct options *options)
     lt.l[i] = init_list_entries();
 
   char *directory = options->main_directory;
-  int fd = open64(directory, OPEN_FLAGS^O_NOFOLLOW); // follow symlinks only for the main directory
+  int fd = open64(directory, OPEN_FLAGS&~O_NOFOLLOW); // follow symlinks only for the main directory
   check(fd);
   
   struct statx s;

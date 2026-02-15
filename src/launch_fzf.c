@@ -48,13 +48,13 @@ void launch_in_fzf(char** argv, struct options *options)
 
 char* stringize_argv(char** argv)
 {
-  int cmd_argc = sizeof(PRIVATE_FZF_OPT);
+  int cmd_argc = 3; // space for reverse order option : ` -r`
   for(char** cur=argv; *cur != NULL; cur++)
     cmd_argc += strlen(*cur) + 1; // 1 space
 
   char* cmd_argv = (char*)calloc(cmd_argc+1, sizeof(char));
   strcat(cmd_argv, *argv);
-  strcat(cmd_argv, " " PRIVATE_FZF_OPT);
+  strcat(cmd_argv, " -r");
   for(char** cur=argv+1; *cur != NULL; cur++){
     strcat(cmd_argv, " ");
     strcat(cmd_argv, *cur);

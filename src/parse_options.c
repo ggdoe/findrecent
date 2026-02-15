@@ -24,7 +24,6 @@
 #define TOK_FZF_WRAP_ENTRY      0xF7
 #define TOK_PRINT_CONFIG        0xF8
 #define TOK_NO_CONFIG           0xF9
-#define TOK_PRIV_FZF_REORDER    0xFA
 #define TOK_HELP                'h'
 #define TOK_VERSION             0xFF
 
@@ -51,7 +50,6 @@ struct option long_options[] = {
   {"fzf-search-in-date", no_argument,       0, TOK_FZF_SEARCH_DATE },
   {"fzf-wrap-entry",     no_argument,       0, TOK_FZF_WRAP_ENTRY  },
   {"no-config",          no_argument,       0, TOK_NO_CONFIG       },
-  { PRIVATE_FZF_OPT+2,   no_argument,       0, TOK_PRIV_FZF_REORDER},
   {"help",               no_argument,       0, TOK_HELP            },
   {"version",            no_argument,       0, TOK_VERSION         },
   {0, 0, 0, 0}
@@ -130,7 +128,6 @@ struct options default_options()
     .fzf_select         = FZF_SELECT_EXEC,
 
     .print_config       = false,
-    .fzf_reorder        = false,
     .parsing_failed     = false,
     .no_config          = false,
     .exclude_list_count = 0,
@@ -325,9 +322,6 @@ void parse_arg(struct options *options, int arg)
         optind = 0; // reset getopt once
       }
       break;
-    case TOK_PRIV_FZF_REORDER: // this is a private option, reverse the order when using fzf but not if it is piped
-      options->fzf_reorder = true;
-      break;
     case TOK_HELP:
       print_help();
       exit(0);
@@ -462,7 +456,7 @@ struct options parse_options(int argc, char** argv)
   else if (optind == argc-1)
     options.main_directory = argv[optind];
 
-  int fd = open64(options.main_directory, OPEN_FLAGS^O_NOFOLLOW);
+  int fd = open64(options.main_directory, OPEN_FLAGS&~O_NOFOLLOW);
   if (fd < 0) {
     fprintf(stderr, "cannot open `%s`: %s\n", options.main_directory, strerror(errno));
     exit(1);
