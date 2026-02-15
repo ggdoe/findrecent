@@ -28,6 +28,9 @@
 
 #define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
 
+#define BAT_CMD "bat"
+#define FZF_CMD "fzf"
+
 struct inner_buffer{
   char mem[INNER_BUFSIZE];
   size_t n;

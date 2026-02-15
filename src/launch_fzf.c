@@ -15,7 +15,7 @@ void launch_in_fzf(char** argv, struct options *options)
   char select_cmd[1024] = "";
 
   char* fzf_argv[] = {
-    "fzf",
+    FZF_CMD,
     "--ansi",                                                 // for color
     "+s",                                                     // do not sort result
     "-d\x1f ",                                                // delimiter is the 'unit separator' \x1f 
@@ -76,7 +76,7 @@ void fill_preview_cmd(char* preview, struct options *options)
         push_column_id(preview);
         break;
       case FZF_PANE_BAT:
-        strcat(preview, "bat --style='changes' --color always ");
+        strcat(preview, BAT_CMD " --style='changes' --color always ");
         push_column_id(preview);
         break;
       case FZF_PANE_NONE: default:
@@ -107,7 +107,7 @@ void fill_select_cmd(char* select, struct options *options)
         push_column_id(select);
         break;
       case FZF_SELECT_BAT:
-        strcat(select, "bat --style=changes,numbers --color always ");
+        strcat(select, BAT_CMD " --style=changes,numbers --color always ");
         push_column_id(select);
         break;
       case FZF_SELECT_GIT:
@@ -125,7 +125,7 @@ void fill_select_cmd(char* select, struct options *options)
         strcat(select, "printf -- \"%s\n\" ");
         push_column_id(select);
         strcat(select, 
-        "| fzf "
+        "| " FZF_CMD " "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
         "--bind=enter:become:'"
         "printf -v file \"%q\" \\{}; "             // espace the filename
