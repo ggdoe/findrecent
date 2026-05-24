@@ -13,7 +13,6 @@
 #define TOK_COLOR               'c'
 #define TOK_THREADS             'T'
 #define TOK_TASK_THRESHOLD      0xF0
-#define TOK_INC_MAX             0xF1
 #define TOK_EXCLUDE             'e'
 #define TOK_NO_EXCLUDE          0xF2
 #define TOK_FZF                 0xF3
@@ -39,7 +38,6 @@ struct option long_options[] = {
   {"color",              no_argument,       0, TOK_COLOR           },
   {"threads",            required_argument, 0, TOK_THREADS         },
   {"task-threshold",     required_argument, 0, TOK_TASK_THRESHOLD  },
-  {"increase-max-fd",    no_argument,       0, TOK_INC_MAX         },
   {"exclude",            required_argument, 0, TOK_EXCLUDE         },
   {"no-exclude",         no_argument,       0, TOK_NO_EXCLUDE      },
   {"print-config",       no_argument,       0, TOK_PRINT_CONFIG    },
@@ -75,8 +73,6 @@ void print_help()
     "  -T, --threads <int>          : set the number of threads, print is often the bottleneck (default: " DEFAULT_THREADS_NUMBER_STR ").\n"
     "      --task-threshold         : minimum number of links in a subdirectory to launch a new openmp task.\n"
     "                                 empty folders have 2 links (values <= 2 always launch a new task).\n"
-    "      --increase-max-fd        : increase the maximum number of files descriptors opened\n"
-    "                                 at the same time (may be necessary with lot of threads).\n"
     "  -e, --exclude <path>         : exclude directory. `*` match multiple characters, and `?` match one.\n"
     "      --no-exclude             : do not exclude any path.\n"
     "      --fzf                    : show in fzf (toggle on,off).\n"
@@ -118,7 +114,6 @@ struct options default_options()
     .hide_date          = false,
     .color              = false,
     .no_exclude         = false,
-    .inc_max_fd         = false,
 
     .fzf_activate       = false,
     .fzf_wrap_entry     = false,
@@ -161,8 +156,6 @@ void print_config(struct options *options)
   printf("reverse_order:    %s \n",   true_false_str[options->reverse_order]);
   printf("hide-date:        %s \n",   true_false_str[options->hide_date]);
   printf("color:            %s \n",   true_false_str[options->color]);
-  if(options->inc_max_fd)
-    printf("inc_max_fd:       %s \n", true_false_str[options->inc_max_fd]);
   printf("fzf:              %s \n",   true_false_str[options->fzf_activate]);
   printf("fzf-search-date:  %s \n",   true_false_str[options->fzf_search_date]);
   printf("fzf-wrap-entry:   %s \n",   true_false_str[options->fzf_wrap_entry]);
@@ -266,9 +259,6 @@ void parse_arg(struct options *options, int arg)
       break;
     case TOK_TASK_THRESHOLD: // task-threshold
       options->task_threshold = atoll(optarg);
-      break;
-    case TOK_INC_MAX: // inc-max-fd
-      options->inc_max_fd = true;
       break;
     case TOK_EXCLUDE: // exclude
       push_exclude_path(options, optarg);
@@ -481,13 +471,11 @@ struct options parse_options(int argc, char** argv)
 
     // setvbuf(stdout, NULL, _IOFBF, 0); // full-buffering mode: remove flush after newline, something like 15% better perf on my sample but less pleasant to watch and useless for fzf
   
-  if(options.inc_max_fd) {
-    // increase maximum number of file descriptor opened at the same time. prevent crash when there are too many threads 
-    struct rlimit rl;
-    check(getrlimit(RLIMIT_NOFILE, &rl));
-    rl.rlim_cur = rl.rlim_max;
-    check(setrlimit(RLIMIT_NOFILE, &rl));
-  }
+  // increase maximum number of file descriptor opened at the same time. prevent crash when there are too many threads 
+  struct rlimit rl;
+  check(getrlimit(RLIMIT_NOFILE, &rl));
+  rl.rlim_cur = rl.rlim_max;
+  check(setrlimit(RLIMIT_NOFILE, &rl));
 
   return options;
 }

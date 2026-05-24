@@ -54,7 +54,7 @@ struct entry {
   struct filename *name;
   const char* color;
 };
-
+ 
 struct list_entries {
   struct buffer buffer;
   struct entry *entries;
@@ -107,7 +107,6 @@ struct options {
   bool hide_date;
   bool color;
   bool no_exclude;
-  bool inc_max_fd;
 
   bool fzf_activate;
   bool fzf_wrap_entry;

@@ -15,7 +15,6 @@ _fr_completions()
     -color
     -threads
     -hide-date
-    -increase-max-fd
     -task-threshold
     -exclude
     -no-exclude
