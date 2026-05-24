@@ -60,7 +60,7 @@ struct list_entries {
   struct entry *entries;
   size_t n;
   size_t cap;
-};
+} __attribute__((aligned(64)));
 
 struct list_task {
   struct list_entries *l;
