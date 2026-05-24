@@ -1,5 +1,4 @@
 #include "defs.h"
-#define ACTIVATE_HEAP_ALLOCATED_BUFFER
 
 struct linux_dirent64 {
     ino64_t        d_ino;    /* 64-bit inode number */
@@ -9,10 +8,15 @@ struct linux_dirent64 {
     char           d_name[]; /* Filename (null-terminated) */
 };
 
+// buffers for each thread at each depth for getdents64
+static thread_local char** buffers = NULL;
+static thread_local size_t max_allocated_depth = 0;
+
 static struct list_entries init_list_entries();
 static void findrecent_work(struct list_task *restrict lt, int fd, struct filename *restrict path, const struct options *restrict options, const size_t depth);
 static inline bool match(const char *pattern, const char *str);
 static inline bool is_path_excluded(char* exclude_list, const char* filename);
+static char* get_thread_buffer(const size_t depth);
 
 struct list_entries findrecent(const struct options *options)
 {
@@ -56,6 +60,16 @@ struct list_entries findrecent(const struct options *options)
 
   struct list_entries l = merge_sort_list_task(&lt, nb_threads);
   free(lt.l);
+  
+  // free thread_local buffers
+  #pragma omp parallel
+  {
+    for(size_t i=0; i<max_allocated_depth; i++)
+      if(buffers[i] != NULL)
+        free(buffers[i]);
+    free(buffers);
+  }
+
   return l;
 }
 
@@ -63,13 +77,8 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
 {
   if(depth > options->max_depth) return;
 
-  #ifndef ACTIVATE_HEAP_ALLOCATED_BUFFER
-  char buf[GETDENTS_BUFSIZE];
-  #else
-  char* buf = (char*)malloc(GETDENTS_BUFSIZE * sizeof(char));
-  #endif
-
   struct list_entries *l = &lt->l[omp_get_thread_num()];
+  char* buf = get_thread_buffer(depth);
 
   for(;;)
   {
@@ -122,9 +131,6 @@ void findrecent_work(struct list_task *restrict lt, int fd, struct filename *res
     if(d->d_off == 0x7fffffffffffffff) break;
   }
   close(fd);
-  #ifdef ACTIVATE_HEAP_ALLOCATED_BUFFER
-  free(buf);
-  #endif
 }
 
 struct list_entries init_list_entries()
@@ -185,4 +191,22 @@ bool match(const char *pattern, const char *str) {
     pattern++;
 
   return *pattern == '\0';
+}
+
+static char* get_thread_buffer(const size_t depth)
+{
+  if(depth >= max_allocated_depth) {
+    const size_t new_max = depth + 16;
+    buffers = (char**) realloc(buffers, new_max * sizeof(char*));
+    checkptr(buffers);
+    for(size_t i=max_allocated_depth; i<new_max; i++)
+      buffers[i] = NULL;
+    max_allocated_depth = new_max;
+  }
+
+  if(buffers[depth] == NULL) {
+    buffers[depth] = (char*)malloc(GETDENTS_BUFSIZE * sizeof(char));
+  }
+
+  return buffers[depth];
 }
