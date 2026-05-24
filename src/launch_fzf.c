@@ -103,7 +103,7 @@ void fill_select_cmd(char* select, struct options *options)
   else {
     switch (options->fzf_select) {
       case FZF_SELECT_CAT:
-        strcat(select, "cat )");
+        strcat(select, "cat ");
         push_column_id(select);
         break;
       case FZF_SELECT_BAT:
