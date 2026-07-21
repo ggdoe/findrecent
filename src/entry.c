@@ -95,6 +95,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   const bool activate_color = options->color;
   const bool hide_date = options->hide_date;
   const bool fzf_activate = options->fzf_activate;
+  const char end_char = (fzf_activate ? '\0' : '\n');
   const enum sort_type sort_type = options->sort_type;
   const enum search_type search_type = options->search_type;
   const uint32_t fzf_shorten_name = (fzf_activate ? options->fzf_shorten_name : 0);
@@ -142,13 +143,13 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
 
     if(activate_color && search_type == SEARCH_DIRECTORIES) {
       const uint8_t color_val = DIR_COLOR_FUNCTION(depth);
-      printf("\033[38;5;%hhum%s\033[0m\n", color_val, buf);
+      printf("\033[38;5;%hhum%s\033[0m%c", color_val, buf, end_char);
     }
     else if (activate_color /* && search_type == SEARCH_FILES */) {
-      printf("\033[%sm%s\033[0m\n", e->color, buf);
+      printf("\033[%sm%s\033[0m%c", e->color, buf, end_char);
     }
     else /* no color */ {
-      printf("%s\n", buf);
+      printf("%s%c", buf, end_char);
     }
   }
 }

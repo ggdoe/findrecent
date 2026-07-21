@@ -16,6 +16,7 @@ void launch_in_fzf(char** argv, struct options *options)
 
   char* fzf_argv[] = {
     FZF_CMD,
+    "--read0",
     "--ansi",                                                 // for color
     "+s",                                                     // do not sort result
     "-d\x1f ",                                                // delimiter is the 'unit separator' \x1f 
@@ -66,17 +67,17 @@ void fill_preview_cmd(char* preview, struct options *options)
 {
   strcat(preview, "--preview=");
   if(options->search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE) {
-    strcat(preview, "ls -lth --color "); 
+    strcat(preview, "ls -lth --color -- "); 
     push_column_id(preview);
   }
   else {
     switch (options->fzf_pane) {
       case FZF_PANE_CAT:
-        strcat(preview, "cat ");
+        strcat(preview, "cat -- ");
         push_column_id(preview);
         break;
       case FZF_PANE_BAT:
-        strcat(preview, BAT_CMD " --style='changes' --color always ");
+        strcat(preview, BAT_CMD " --style='changes' --color always -- ");
         push_column_id(preview);
         break;
       case FZF_PANE_NONE: default:
@@ -97,17 +98,17 @@ void fill_select_cmd(char* select, struct options *options)
   strcat(select, "--bind=enter:become(");
 
   if(options->search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE) {
-    strcat(select, "ls -lth --color ");
+    strcat(select, "ls -lth --color -- ");
     push_column_id(select);
   }
   else {
     switch (options->fzf_select) {
       case FZF_SELECT_CAT:
-        strcat(select, "cat ");
+        strcat(select, "cat -- ");
         push_column_id(select);
         break;
       case FZF_SELECT_BAT:
-        strcat(select, BAT_CMD " --style=changes,numbers --color always ");
+        strcat(select, BAT_CMD " --style=changes,numbers --color always -- ");
         push_column_id(select);
         break;
       case FZF_SELECT_GIT:
@@ -122,10 +123,10 @@ void fill_select_cmd(char* select, struct options *options)
         );
         break;
       case FZF_SELECT_EXEC:
-        strcat(select, "printf -- \"%s\n\" ");
+        strcat(select, "printf -- \"%s\" ");
         push_column_id(select);
         strcat(select, 
-        "| " FZF_CMD " "
+        "| " FZF_CMD " --read0 "
         "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
         "--bind=enter:become:'"
         "printf -v file \"%q\" \\{}; "                             // espace the filename
