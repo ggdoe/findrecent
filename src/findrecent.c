@@ -145,7 +145,7 @@ struct list_entries init_list_entries()
   buffer->b = (struct inner_buffer**) malloc(sizeof(struct inner_buffer*));
   checkptr(buffer->b);
   buffer->n = 1;
-  (*buffer->b) = (struct inner_buffer*) malloc(sizeof(struct inner_buffer));
+  (*buffer->b) = (struct inner_buffer*) malloc(sizeof(struct inner_buffer) + INITIAL_BUFSIZE * sizeof(char));
   checkptr(*buffer->b);
   (*buffer->b)->n = 0;
 

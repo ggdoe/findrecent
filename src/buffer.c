@@ -5,11 +5,11 @@ void* push_buffer(struct buffer *buffer, size_t len)
 {
   struct inner_buffer *cur = buffer->b[buffer->n-1];
 
-  if(cur->n+len >= INNER_BUFSIZE) {
+  if(cur->n+len >= INITIAL_BUFSIZE * (1LU<<(buffer->n-1))) {
     size_t n = buffer->n++;
     buffer->b = (struct inner_buffer**) realloc(buffer->b, (n+1)*sizeof(struct inner_buffer*));
     checkptr(buffer->b);
-    buffer->b[n] = (struct inner_buffer*) malloc(sizeof(struct inner_buffer));
+    buffer->b[n] = (struct inner_buffer*) malloc((1LU<<n) * INITIAL_BUFSIZE * sizeof(char) + sizeof(struct inner_buffer));
     checkptr(buffer->b[n]);
 
     cur = buffer->b[n];

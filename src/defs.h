@@ -20,7 +20,7 @@
 #define PRGM_VERSION               "1.5"
 
 #define GETDENTS_BUFSIZE     (32768)   // size of the buffer for the getdents syscall, allocated on the stack for each subdirectories explored, be aware of stack overflow (see in findrecent.c to change for heap allocated buffer)
-#define INNER_BUFSIZE        (32768)   // minimum: 256 (=NAME_MAX)
+#define INITIAL_BUFSIZE        (32768)   // minimum: 256 (=NAME_MAX)
 #define INITIAL_ENTRIES_SIZE (32768)   // initial size of the number of entries allocation (for each thread)
 
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
@@ -32,8 +32,8 @@
 #define FZF_CMD "fzf"
 
 struct inner_buffer{
-  char mem[INNER_BUFSIZE];
   size_t n;
+  char mem[];
 };
 
 struct buffer{
