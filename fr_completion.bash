@@ -50,7 +50,7 @@ _fr_completions()
     return 0
     ;;
        -?(-)fzf-select)
-    COMPREPLY=( $(compgen -W "none cat bat git open" -- "$cur") )
+    COMPREPLY=( $(compgen -W "none cat bat git open exec" -- "$cur") )
     return 0
     ;;
   esac
