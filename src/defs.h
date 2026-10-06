@@ -17,7 +17,7 @@
 #define CONFIG_FILE  "~/.config/findrecent/findrecent.conf"
 #define BAT_CMD      "bat"
 #define FZF_CMD      "fzf"
-#define PRGM_VERSION "1.6"
+#define PRGM_VERSION "1.7"
 
 #define INTIAL_EXCLUDE_LIST_SIZE   4096
 #define DEFAULT_THREADS_NUMBER     4
