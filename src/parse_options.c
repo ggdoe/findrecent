@@ -98,7 +98,7 @@ void print_help()
 static inline
 struct options default_options()
 {
-  static char local_directory[PATH_MAX] = ".";
+  static char local_directory[FR_PATH_MAX] = ".";
   char* exclude_list = (char*)calloc(INTIAL_EXCLUDE_LIST_SIZE, sizeof(char));
 
   return (struct options){
@@ -324,7 +324,7 @@ void parse_arg(struct options *options, int arg)
 static
 void parse_config_files(struct options *options)
 {
-  char config_file[PATH_MAX] = {0};
+  char config_file[FR_PATH_MAX] = {0};
 
   const char* home_directory = getenv("HOME");
   if(CONFIG_FILE[0] == '~' && home_directory){

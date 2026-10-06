@@ -100,7 +100,7 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
   const enum search_type search_type = options->search_type;
   const uint32_t fzf_shorten_name = (fzf_activate ? options->fzf_shorten_name : 0);
   const size_t n = l->n;
-  char buffer[PATH_MAX];
+  char buffer[FR_PATH_MAX];
 
   for(size_t i=0; i<n; i++){
     char* buf = buffer + 3; // +3 because if fzf_shorten_name=1 and you search at the root '/' and there is a single character directory at the root, the files inside this directory will underflow the buffer when adding the ellipsis character

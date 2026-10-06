@@ -26,6 +26,8 @@
 #define INITIAL_BUFSIZE      (32768)   // minimum: 256 (=NAME_MAX)
 #define INITIAL_ENTRIES_SIZE (32768)   // initial size of the number of entries allocation (for each thread)
 
+#define FR_PATH_MAX           PATH_MAX
+
 #define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
 
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
