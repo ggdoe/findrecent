@@ -82,28 +82,39 @@ int cmp_date(const void *p1, const void *p2)
 #ifndef MERGE_THEN_SORT
 void merge_sorted_list(struct list_entries *l, struct list_entries *ll, int nb_threads)
 {
-  for(int i=0; i<nb_threads; i++){
+  const struct entry *cur[nb_threads];
+  const struct entry *end[nb_threads];
+  int active_threads = 0;
+
+  for (int i = 0; i < nb_threads; i++) {
+    if (ll[i].n > 0) {
+      cur[active_threads] = ll[i].entries;
+      end[active_threads] = ll[i].entries + ll[i].n;
+      active_threads++;
+    }
     ll[i].cap = ll[i].n;
     ll[i].n = 0;
   }
 
-  #define get_entry(i) &ll[i].entries[ll[i].n]
-  const struct entry maximum_value = {.date={.tv_sec=INT64_MAX, .tv_nsec=UINT32_MAX}, .name=NULL};
+  for (size_t i = 0; i < l->n; i++) {
+    int argmin = 0;
+    const struct entry *minval = cur[0];
 
-  for(size_t cur=0; cur<l->n; cur++) {
-    const struct entry *minval = &maximum_value;
-    size_t argmin = 0;
-    for(int i=0; i<nb_threads; i++) {
-      if(ll[i].n >= ll[i].cap) continue;
-      struct entry *curval = get_entry(i);
-      if(cmp_date(curval, minval)<0) {
-        minval = curval;
+    for (int i = 1; i < active_threads; i++) {
+      if (cmp_date(cur[i], minval) < 0) {
+        minval = cur[i];
         argmin = i;
       }
     }
-    l->entries[cur] = *minval;
-    ll[argmin].n++;
+
+    l->entries[i] = *minval;
+    cur[argmin]++;
+
+    if (cur[argmin] == end[argmin]) {
+      active_threads--;
+      cur[argmin] = cur[active_threads];
+      end[argmin] = end[active_threads];
+    }
   }
-  #undef get_entry
 }
 #endif
