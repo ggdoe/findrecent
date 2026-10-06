@@ -118,12 +118,12 @@ void print_list_entry(struct list_entries *restrict l, struct options *restrict 
 
     if(!hide_date) {
       print_entry_info(e, sort_type);
-      if(fzf_activate) printf("\x1f "); // print fzf separator
+      if(fzf_activate) printf(FIELD_SEP); // print fzf separator
     }
 
     // print the 'hidden' full filename in fzf in case fzf_shorten_name is set
     if(fzf_activate && fzf_shorten_name != 0) {
-      printf("%s\x1f ", buf);
+      printf("%s"FIELD_SEP, buf);
       
       int64_t to_skip = depth - fzf_shorten_name;
       if (to_skip >= 0) {

@@ -29,6 +29,7 @@
 #define FR_PATH_MAX           PATH_MAX
 
 #define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
+#define FIELD_SEP         "\x1f "
 
 #define check(v)    if(v < 0)     { perror(NULL); exit(1); }
 #define checkptr(p) if(p == NULL) { perror(NULL); exit(1); }
