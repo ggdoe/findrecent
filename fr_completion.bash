@@ -20,7 +20,6 @@ _fr_completions()
     -no-exclude
     -fzf
     -fzf-pane
-    -fzf-select
     -fzf-shorten-name
     -fzf-search-in-date
     -fzf-wrap-entry
@@ -47,10 +46,6 @@ _fr_completions()
     ;;
        -?(-)fzf-pane)
     COMPREPLY=( $(compgen -W "none cat bat" -- "$cur") )
-    return 0
-    ;;
-       -?(-)fzf-select)
-    COMPREPLY=( $(compgen -W "none cat bat git open exec" -- "$cur") )
     return 0
     ;;
   esac
