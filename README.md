@@ -15,8 +15,7 @@ To add or change colors you can check `src/gen_colormap.sh`.
 ## fzf support
 fzf can be enable with the option `--fzf`, fzf must be installed (<https://github.com/junegunn/fzf>).
 - preview pane can be enable with `--fzf-pane <str>`, options are `none`, `cat`, `bat`. bat must be installed (<https://github.com/sharkdp/bat>).
-- if enter is pressed, execute the action define by `--fzf-select <str>`, options are `none`, `cat`, `bat`, `git`, `open`, `exec`. 
-- press `ctrl+r` to reload.
+- press `enter` to show a prompt box, and execute a command on the file selected. 
 - press `ctrl+p` to toggle the pane visibility.
 - press `ctrl+l` to toggle the line wrap in the pane.
 
@@ -31,7 +30,7 @@ Here is an exemple of config file:
 
 --fzf
 --fzf-pane bat
-# --fzf-select git
+# --fzf-search-in-date
 
 # --threads 1
 
@@ -56,7 +55,6 @@ Here is an exemple of config file:
 | `--no-exclude`               |    -     | Do not exclude any path.                                                                                                                                               |
 | `--fzf`                      |    -     | Show in `fzf` (toggle on, off).                                                                                                                                        |
 | `--fzf-pane`                 | `<str>`  | Activate `fzf` side pane. Options: `none`, `cat`, `bat`. (default: `cat`)                                                                                              |
-| `--fzf-select`               | `<str>`  | Action to execute after selection. Options: `none`, `cat`, `bat`, `git`, `open`, `exec` (default: `exec`).                                                             |
 | `--fzf-search-in-date`       |    -     | Enable the search for date in fzf.                                                                                                                                     |
 | `--fzf-wrap-entry`           |    -     | Line break if entry is too long (toggle on,off).                                                                                                                       |
 | `-S`, `--fzf-shorten-name`   | `<int>`  | Shorten the filepath shown (up to `n` file, `0` to desactivate).                                                                                                       |

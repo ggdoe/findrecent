@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <dirent.h>
 #include <stdint.h>
@@ -27,6 +28,8 @@
 #define INITIAL_ENTRIES_SIZE (32768)   // initial size of the number of entries allocation (for each thread)
 
 #define FR_PATH_MAX           PATH_MAX
+#define FZF_MAX_QUERY_SIZE    (PATH_MAX<<2)
+#define FZF_MAX_QUERY_ARGS    64
 
 #define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
 #define FIELD_SEP         "\x1f "
@@ -89,15 +92,6 @@ enum fzf_pane {
   FZF_PANE_BAT
 };
 
-enum fzf_select {
-  FZF_SELECT_NONE=0,
-  FZF_SELECT_CAT,
-  FZF_SELECT_BAT,
-  FZF_SELECT_GIT,
-  FZF_SELECT_OPEN,
-  FZF_SELECT_EXEC
-};
-
 struct options {
   enum search_type search_type;
   enum sort_type sort_type;
@@ -117,7 +111,6 @@ struct options {
   bool fzf_search_date;
   uint32_t fzf_shorten_name;
   enum fzf_pane fzf_pane;
-  enum fzf_select fzf_select;
 
   // private
   uint32_t exclude_list_count;
@@ -135,6 +128,6 @@ struct filename *push_buffer_filename(struct list_entries *restrict l, struct fi
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct statx *restrict s, enum sort_type type);
 
 struct options parse_options(int argc, char** argv);
-void launch_in_fzf(char** argv, struct options *options);
+void launch_in_fzf(struct options *options);
 
 #endif // _DEFS_H_

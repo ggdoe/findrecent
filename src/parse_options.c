@@ -17,7 +17,6 @@
 #define TOK_NO_EXCLUDE          0xF2
 #define TOK_FZF                 0xF3
 #define TOK_FZF_PANE            0xF4
-#define TOK_FZF_SELECT          0xF5
 #define TOK_FZF_SHORTEN_NAME    'S'
 #define TOK_FZF_SEARCH_DATE     0xF6
 #define TOK_FZF_WRAP_ENTRY      0xF7
@@ -43,7 +42,6 @@ struct option long_options[] = {
   {"print-config",       no_argument,       0, TOK_PRINT_CONFIG    },
   {"fzf",                no_argument,       0, TOK_FZF             },
   {"fzf-pane",           required_argument, 0, TOK_FZF_PANE        },
-  {"fzf-select",         required_argument, 0, TOK_FZF_SELECT      },
   {"fzf-shorten-name",   required_argument, 0, TOK_FZF_SHORTEN_NAME},
   {"fzf-search-in-date", no_argument,       0, TOK_FZF_SEARCH_DATE },
   {"fzf-wrap-entry",     no_argument,       0, TOK_FZF_WRAP_ENTRY  },
@@ -77,8 +75,6 @@ void print_help()
     "      --no-exclude             : do not exclude any path.\n"
     "      --fzf                    : show in fzf (toggle on,off).\n"
     "      --fzf-pane <str>         : activate fzf side pane.    options: `none`, `cat`, `bat`. (default: `cat`)\n"
-    "      --fzf-select <str>       : action to execute after selection.\n"
-    "                                 options: `none`, `exec`, `cat`, `bat`, `git`, `open`. (default: `exec`)\n"
     "  -S, --fzf-shorten-name <int> : shorten the filepath shown (up to `n` file, `0` to desactivate).\n"
     "      --fzf-search-in-date     : enable the search for date in fzf.\n"
     "      --fzf-wrap-entry         : line break if entry is too long (toggle on,off).\n"
@@ -88,10 +84,9 @@ void print_help()
     "      --version                : print version.\n\n"
 
     "fzf commands:\n"
-    "  ctrl+r  : reload\n"
     "  ctrl+p  : toggle pane visibility\n"
     "  ctrl+l  : toggle the line wrap in the pane\n"
-    "  enter   : select the entry, execute option `fzf-select`.\n"
+    "  enter   : show a prompt box, and execute a command on the file selected.\n"
     , program_name);
 }
 
@@ -120,7 +115,6 @@ struct options default_options()
     .fzf_search_date    = false,
     .fzf_shorten_name   = 0,
     .fzf_pane           = FZF_PANE_CAT,
-    .fzf_select         = FZF_SELECT_EXEC,
 
     .print_config       = false,
     .parsing_failed     = false,
@@ -135,7 +129,6 @@ void print_config(struct options *options)
 {
   const char* true_false_str[] = { "false", "true"};
   const char* fzf_pane_str[]   = { "none", "cat", "bat" };
-  const char* fzf_select_str[] = { "none", "cat", "bat", "git", "open", "exec" };
   const char* sort_type_str[]  = { "creation", "access", "modification", "inode-change", "size" };
   const size_t sort_type_id = 
         options->sort_type == SORT_BIRTH   ? 0 :
@@ -161,7 +154,6 @@ void print_config(struct options *options)
   printf("fzf-wrap-entry:   %s \n",   true_false_str[options->fzf_wrap_entry]);
   printf("fzf-shorten-name: %d \n",   options->fzf_shorten_name);
   printf("fzf-pane:         %s \n",   fzf_pane_str[options->fzf_pane]);
-  printf("fzf-select:       %s \n",   fzf_select_str[options->fzf_select]);
   printf("no_exclude:       %s \n",   true_false_str[options->no_exclude]);
   char* cur = options->exclude_list;
   if(*cur != '\0'){
@@ -275,18 +267,6 @@ void parse_arg(struct options *options, int arg)
       else if ARG_MATCH(options->fzf_pane, "bat",  FZF_PANE_BAT)
       else {
         fprintf(stderr, "bad argument for fzf-pane: `%s`. options: `none`, `cat`, `bat`.\n", optarg);
-        options->parsing_failed = true;
-      }
-      break;
-    case TOK_FZF_SELECT: // fzf-select
-           if ARG_MATCH(options->fzf_select, "none", FZF_SELECT_NONE)
-      else if ARG_MATCH(options->fzf_select, "cat",  FZF_SELECT_CAT)
-      else if ARG_MATCH(options->fzf_select, "bat",  FZF_SELECT_BAT)
-      else if ARG_MATCH(options->fzf_select, "git",  FZF_SELECT_GIT)
-      else if ARG_MATCH(options->fzf_select, "open", FZF_SELECT_OPEN)
-      else if ARG_MATCH(options->fzf_select, "exec", FZF_SELECT_EXEC)
-      else {
-        fprintf(stderr, "bad argument for fzf-select: `%s`. options: `none`, `cat`, `bat`, `git`, `open`, `exec`.\n", optarg);
         options->parsing_failed = true;
       }
       break;
@@ -468,6 +448,11 @@ struct options parse_options(int argc, char** argv)
   
   if(options.threads > 0)
     omp_set_num_threads(options.threads);
+
+  if(!isatty(STDOUT_FILENO)) {
+    options.fzf_activate = false;
+    // options.color = false;
+  }
 
     // setvbuf(stdout, NULL, _IOFBF, 0); // full-buffering mode: remove flush after newline, something like 15% better perf on my sample but less pleasant to watch and useless for fzf
   

@@ -1,66 +1,61 @@
 #include "defs.h"
 
-static char* stringize_argv(char** argv);
 static void fill_preview_cmd(char* preview, struct options *options);
-static void fill_reload_cmd(char* reload, char* cmd_argv);
-static void fill_select_cmd(char* select, struct options *options);
+static int fzf_fork(int fd_fr, struct options *options);
+static int query_fork(char *filepath, ssize_t len_filepath);
+static void exec_query(char* query, char* filepath, ssize_t len_filepath);
 
 #define push_column_id(buffer) strcat(buffer, (options->hide_date ? "{1}" : "{2}"))
 
-
-void launch_in_fzf(char** argv, struct options *options)
+void launch_in_fzf(struct options *options)
 {
-  char preview_cmd[512] = "";
-  char reload_cmd[512] = "";
-  char select_cmd[1024] = "";
+  int pipe_fr[2];
+  pipe2(pipe_fr, O_CLOEXEC);
 
-  char* fzf_argv[] = {
-    FZF_CMD,
-    "--read0",
-    "--ansi",                                                 // for color
-    "+s",                                                     // do not sort result
-    "-d\x1f ",                                                // delimiter is the 'unit separator' \x1f 
-    "--bind=ctrl-p:toggle-preview",                           // bind ctrl+p to toggle the pane visibility
-    "--bind=ctrl-l:toggle-preview-wrap",                      // bind ctrl+l to toggle the line wrap in the the pane
-    options->hide_date ? "--with-nth=-1" : "--with-nth=1,-1", // last field is the non-shorten path to the file, and should not be displayed
-    options->fzf_search_date ? "--nth=.." : "--nth=-1",       // set fields to search in
-    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",         // line break if the entry is too long
+  // this fork call to findrecent() and pipe into write end of pipe_fr
+  int pid_fr = fork();
+  if (pid_fr == 0) {
+    close(pipe_fr[0]);
+    dup2(pipe_fr[1], STDOUT_FILENO);
+    close(pipe_fr[1]);
+    return;
+  } // end fork fr
 
-    preview_cmd, 
-    reload_cmd, 
-    select_cmd,
-    NULL,
-  };
-  
-  // construct cmd_argv
-  char* cmd_argv = stringize_argv(argv);
+  close(pipe_fr[1]);
 
-  // fill fzf arguments
-  fill_preview_cmd(preview_cmd, options);
-  fill_reload_cmd(reload_cmd, cmd_argv);
-  fill_select_cmd(select_cmd, options);
-  setenv("FZF_DEFAULT_COMMAND", cmd_argv, 1);
+  int fd_fzf = fzf_fork(pipe_fr[0], options);
 
-  // launch fzf
-  if(execvp(fzf_argv[0], fzf_argv) < 0)
-    perror("error durring fzf launch.");
-  exit(1); // unreachable
-}
+  kill(pid_fr, SIGTERM);
+  waitpid(pid_fr, NULL, 0);
 
-char* stringize_argv(char** argv)
-{
-  int cmd_argc = 3; // space for reverse order option : ` -r`
-  for(char** cur=argv; *cur != NULL; cur++)
-    cmd_argc += strlen(*cur) + 1; // 1 space
+  char filebuff[FR_PATH_MAX];
+  char *filepath = filebuff;
+  ssize_t len_filepath = read(fd_fzf, filebuff, sizeof(filebuff)) - 1;
+  close(fd_fzf);
 
-  char* cmd_argv = (char*)calloc(cmd_argc+1, sizeof(char));
-  strcat(cmd_argv, *argv);
-  strcat(cmd_argv, " -r");
-  for(char** cur=argv+1; *cur != NULL; cur++){
-    strcat(cmd_argv, " ");
-    strcat(cmd_argv, *cur);
+  if (len_filepath < 0) // fzf aborted
+    exit(0);
+
+  if (!options->hide_date) {
+    filepath = strchr(filebuff, FIELD_SEP[0]);
+    if (!filepath) {
+      perror("strchr");
+      exit(1);
+    }
+    filepath += sizeof(FIELD_SEP) - 1;
+    len_filepath -= filepath - filebuff;
   }
-  return cmd_argv;
+  
+  int fd_query = query_fork(filepath, len_filepath);
+
+  char query[FR_PATH_MAX] = {0};
+  int len_query = read(fd_query, query, sizeof(query));
+  close(fd_query);
+
+  if (len_query <= 0) // query aborted
+    exit(0);
+
+  exec_query(query, filepath, len_filepath);
 }
 
 void fill_preview_cmd(char* preview, struct options *options)
@@ -86,75 +81,162 @@ void fill_preview_cmd(char* preview, struct options *options)
   }
 }
 
-void fill_reload_cmd(char* reload, char* cmd_argv)
+int fzf_fork(int fd_fr, struct options *options)
 {
-  strcat(reload, "--bind=ctrl-r:reload(");
-  strcat(reload, cmd_argv);
-  strcat(reload, ")");
+  char preview_cmd[512] = "";
+
+  char* fzf_argv[] = {
+    FZF_CMD,
+    "--read0",
+    "--print0",
+    "--ansi",                                                 // for color
+    "+s",                                                     // do not sort result
+    "-d" FIELD_SEP,                                           // delimiter is the 'unit separator' \x1f 
+    "--bind=ctrl-p:toggle-preview",                           // bind ctrl+p to toggle the pane visibility
+    "--bind=ctrl-l:toggle-preview-wrap",                      // bind ctrl+l to toggle the line wrap in the the pane
+    options->hide_date ? "--with-nth=-1" : "--with-nth=1,-1", // last field is the non-shorten path to the file, and should not be displayed
+    options->fzf_search_date ? "--nth=.." : "--nth=-1",       // set fields to search in
+    options->fzf_wrap_entry ? "--wrap" : "--no-wrap",         // line break if the entry is too long
+
+    preview_cmd, 
+    NULL,
+  };
+
+  fill_preview_cmd(preview_cmd, options);
+
+  int pipe_fzf[2];
+  pipe2(pipe_fzf, O_CLOEXEC);
+
+  // this fork read pipe_fr and pipe into fzf
+  int pid_fzf = fork();
+  if (pid_fzf == 0) {
+    dup2(pipe_fzf[1], STDOUT_FILENO);
+    dup2(fd_fr, STDIN_FILENO);
+
+    // launch fzf
+    execvp(fzf_argv[0], fzf_argv);
+    perror("execvp");
+    exit(1); // unreachable
+  } // end fork fzf
+
+  close(fd_fr);
+  close(pipe_fzf[1]);
+
+  // wait for the entry to be selected in fzf
+  waitpid(pid_fzf, NULL, 0);
+
+  return pipe_fzf[0];
 }
 
-void fill_select_cmd(char* select, struct options *options)
+int query_fork(char *filepath, ssize_t len_filepath)
 {
-  strcat(select, "--bind=enter:become(");
+  int pipe_query[2];
+  int pipe_file[2];
+  pipe2(pipe_query, O_CLOEXEC);
+  pipe2(pipe_file, O_CLOEXEC);
 
-  if(options->search_type == SEARCH_DIRECTORIES && options->fzf_select != FZF_SELECT_OPEN && options->fzf_select != FZF_SELECT_EXEC && options->fzf_select != FZF_SELECT_NONE) {
-    strcat(select, "ls -lth --color -- ");
-    push_column_id(select);
+  // this fork read fzf result and launch fzf command box
+  int pid_query = fork();
+  if (pid_query == 0) {
+    close(pipe_file[1]);
+    close(pipe_query[0]);
+    dup2(pipe_query[1], STDOUT_FILENO);
+    dup2(pipe_file[0], STDIN_FILENO);
+    close(pipe_query[1]);
+    close(pipe_file[0]);
+
+    char* box_argv[] = {
+      FZF_CMD,
+      "--read0",
+      "--print0",
+      "--bind=enter:print-query",
+      "--header=Enter a command, `%` is substituted by the filepath.",
+      "--header-first",
+      "--disabled",
+      "--height=5",
+      "--info=hidden",
+      "--no-separator",
+      "--no-scrollbar",
+      "--layout=reverse",
+      "--border",
+      "--margin=1,5%",
+      "--padding=1",
+      "--pointer=",
+      NULL
+    };
+
+    execvp(box_argv[0], box_argv);
+    perror("execvp");
+    exit(1); // unreachable
+  } // end fork query
+
+  close(pipe_file[0]);
+  close(pipe_query[1]);
+
+  write(pipe_file[1], filepath, len_filepath);
+  close(pipe_file[1]);
+
+  waitpid(pid_query, NULL, 0);
+
+  return pipe_query[0];
+}
+
+void exec_query(char* query, char* filepath, ssize_t len_filepath)
+{
+  while (*query == ' ') query++;
+  if (*query == '\0') {
+      printf("%s\n", filepath);
+      exit(0);
   }
-  else {
-    switch (options->fzf_select) {
-      case FZF_SELECT_CAT:
-        strcat(select, "cat -- ");
-        push_column_id(select);
+
+  char buf[FZF_MAX_QUERY_SIZE];
+  char *argv[FZF_MAX_QUERY_ARGS];
+  char* arg = buf;
+  int argc = 0;
+  bool replaced = false;
+
+  while (*query && argc < FZF_MAX_QUERY_ARGS - 2) {
+    while (*query == ' ') query++;
+    if (*query == '\0') break;
+
+    argv[argc++] = arg;
+
+    char quote = 0;
+    while(*query) {
+      if (!quote && (*query == '\'' || *query == '"')) {
+        quote = *query;
+      }
+      else if (*query == quote) {
+        quote = 0;
+      }
+      else if (!quote && *query == ' ') {
         break;
-      case FZF_SELECT_BAT:
-        strcat(select, BAT_CMD " --style=changes,numbers --color always -- ");
-        push_column_id(select);
-        break;
-      case FZF_SELECT_GIT:
-        strcat(select, 
-        "filename='");
-        push_column_id(select);
-        strcat(select, "'; "
-        "if ( git -C $(dirname $filename) rev-parse 2>/dev/null );"
-        "then "
-        "git -C $(dirname $filename) diff $(basename $filename);"
-        "else echo cannot show git changes, \\`$filename\\` is not in a git directory. ; fi;"
-        );
-        break;
-      case FZF_SELECT_EXEC:
-        strcat(select, "printf -- \"%s\" ");
-        push_column_id(select);
-        strcat(select, 
-        "| " FZF_CMD " --read0 "
-        "--header \"Enter a command, \\`%\\` is substituted by the filepath. \" --header-first "
-        "--bind=enter:become:'"
-        "printf -v file \"%q\" \\{}; "                             // espace the filename
-        "cmd=\"$FZF_QUERY\"; "
-        "[ -z \"${FZF_QUERY// }\" ] && cmd=echo; "                 // if empty command, use echo
-        "cmd=${cmd//%%/\x1f}; "                                    // escape %%
-        "if [ -z \"${cmd//[^%]}\" ]; then "                        // if no % in command
-          "cmd=\"$cmd $file\"; "                                   // append the filename
-        "else "
-          "cmd=\"${cmd//%/$file}\"; "                              // substitute % by filename
-        "fi; "
-        "cmd=\"${cmd//\x1f/%}\"; "                                 // restore escaped %%
-        "[ -z \"${FZF_QUERY// }\" ] || echo \"\\$ $cmd\" >&2; "    // print command in stderr
-        "eval \"$cmd\"; "                                          // execute command
-        "' "
-        "--disabled --height 5 --info hidden --no-separator --no-scrollbar "
-        "--layout reverse --border --margin 1,5% --padding=1 --pointer \"\" "
-        );
-        break;
-      case FZF_SELECT_OPEN:
-        strcat(select, "open ");
-        push_column_id(select);
-        break;
-      case FZF_SELECT_NONE: default:
-        strcat(select, "echo ");
-        push_column_id(select);
-        break;
+      }
+      else if (*query == '%') {
+        if (*(query + 1) == '%') {
+          *arg++ = '%';
+          query++;
+        }
+        else {
+          replaced = true;
+          memcpy(arg, filepath, len_filepath);
+          arg += len_filepath;
+        }
+      }
+      else {
+        *arg++ = *query;
+      }
+      query++;
     }
+    *arg++ = '\0';
   }
-  strcat(select, ")");
+
+  if (!replaced) {
+    argv[argc++] = memcpy(arg, filepath, len_filepath + 1);
+  }
+  argv[argc] = NULL;
+
+  execvp(argv[0], argv);
+  perror("execvp");
+  exit(1); // unreachable
 }
