@@ -195,11 +195,12 @@ void exec_query(char* query, char* filepath, ssize_t len_filepath)
   int argc = 0;
   bool replaced = false;
 
+  fprintf(stderr, "$ ");
   while (*query && argc < FZF_MAX_QUERY_ARGS - 2) {
     while (*query == ' ') query++;
     if (*query == '\0') break;
 
-    argv[argc++] = arg;
+    argv[argc] = arg;
 
     char quote = 0;
     while(*query) {
@@ -229,12 +230,15 @@ void exec_query(char* query, char* filepath, ssize_t len_filepath)
       query++;
     }
     *arg++ = '\0';
+    fprintf(stderr, "%s ", argv[argc++]);
   }
 
   if (!replaced) {
-    argv[argc++] = memcpy(arg, filepath, len_filepath + 1);
+    argv[argc] = memcpy(arg, filepath, len_filepath + 1);
+    fprintf(stderr, "%s ", argv[argc++]);
   }
   argv[argc] = NULL;
+  fprintf(stderr, "\n");
 
   execvp(argv[0], argv);
   perror("execvp");
