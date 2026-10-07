@@ -28,8 +28,6 @@
 #define INITIAL_ENTRIES_SIZE (32768)   // initial size of the number of entries allocation (for each thread)
 
 #define FR_PATH_MAX           PATH_MAX
-#define FZF_MAX_QUERY_SIZE    (PATH_MAX<<2)
-#define FZF_MAX_QUERY_ARGS    64
 
 #define OPEN_FLAGS        (O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC|O_DIRECTORY)
 #define FIELD_SEP         "\x1f "

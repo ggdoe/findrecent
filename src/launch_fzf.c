@@ -3,7 +3,7 @@
 static void fill_preview_cmd(char* preview, struct options *options);
 static int fzf_fork(int fd_fr, struct options *options);
 static int query_fork(char *filepath, ssize_t len_filepath);
-static void exec_query(char* query, char* filepath, ssize_t len_filepath);
+static void exec_query(char* query, char* filepath);
 
 #define push_column_id(buffer) strcat(buffer, (options->hide_date ? "{1}" : "{2}"))
 
@@ -55,7 +55,7 @@ void launch_in_fzf(struct options *options)
   if (len_query <= 0) // query aborted
     exit(0);
 
-  exec_query(query, filepath, len_filepath);
+  exec_query(query, filepath);
 }
 
 void fill_preview_cmd(char* preview, struct options *options)
@@ -181,7 +181,7 @@ int query_fork(char *filepath, ssize_t len_filepath)
   return pipe_query[0];
 }
 
-void exec_query(char* query, char* filepath, ssize_t len_filepath)
+void exec_query(char* query, char* filepath)
 {
   while (*query == ' ') query++;
   if (*query == '\0') {
@@ -189,58 +189,52 @@ void exec_query(char* query, char* filepath, ssize_t len_filepath)
       exit(0);
   }
 
-  char buf[FZF_MAX_QUERY_SIZE];
-  char *argv[FZF_MAX_QUERY_ARGS];
-  char* arg = buf;
-  int argc = 0;
+  char cmd_buf[FR_PATH_MAX];
+  char* cur = cmd_buf;
   bool replaced = false;
 
-  fprintf(stderr, "$ ");
-  while (*query && argc < FZF_MAX_QUERY_ARGS - 2) {
-    while (*query == ' ') query++;
-    if (*query == '\0') break;
-
-    argv[argc] = arg;
-
-    char quote = 0;
-    while(*query) {
-      if (!quote && (*query == '\'' || *query == '"')) {
-        quote = *query;
-      }
-      else if (*query == quote) {
-        quote = 0;
-      }
-      else if (!quote && *query == ' ') {
-        break;
-      }
-      else if (*query == '%') {
-        if (*(query + 1) == '%') {
-          *arg++ = '%';
-          query++;
-        }
-        else {
-          replaced = true;
-          memcpy(arg, filepath, len_filepath);
-          arg += len_filepath;
-        }
+  fputs("$ ", stderr);
+  while (*query) {
+    if (*query == '%') {
+      if (*(query + 1) == '%') {
+        *cur++ = '%';
+        fputc('%', stderr);
+        query++;
       }
       else {
-        *arg++ = *query;
+        replaced = true;
+        memcpy(cur, "\"$1\"", 4);
+        cur += 4;
+        fputs(filepath, stderr);
       }
-      query++;
     }
-    *arg++ = '\0';
-    fprintf(stderr, "%s ", argv[argc++]);
+    else {
+      *cur++ = *query;
+      fputc(*query, stderr);
+
+    }
+    query++;
   }
 
   if (!replaced) {
-    argv[argc] = memcpy(arg, filepath, len_filepath + 1);
-    fprintf(stderr, "%s ", argv[argc++]);
+    memcpy(cur, " \"$1\"", 5);
+    fputc(' ', stderr);
+    fputs(filepath, stderr);
+    cur += 5;
   }
-  argv[argc] = NULL;
-  fprintf(stderr, "\n");
+  *cur = '\0';
+  fputc('\n', stderr);
 
-  execvp(argv[0], argv);
+  char *sh_argv[] = {
+    "sh",
+    "-c",
+    cmd_buf,
+    "sh",
+    filepath,
+    NULL
+  };
+
+  execvp(sh_argv[0], sh_argv);
   perror("execvp");
   exit(1); // unreachable
 }
