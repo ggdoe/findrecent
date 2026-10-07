@@ -7,7 +7,7 @@ static int query_fork(char *filepath, ssize_t len_filepath);
 static void exec_query(char* query, char* filepath);
 
 #define push_column_id(cur) (cur = (char*)memcpy(cur, (options->hide_date ? "{1}" : "{2}"), 3) + 3)
-#define push_cur(cur, cstr) (cur = (char*)memcpy(cur, cstr, sizeof(cstr) - 1) + sizeof(cstr) - 1)
+#define push_cstr(cur, cstr) (cur = (char*)memcpy(cur, cstr, sizeof(cstr) - 1) + sizeof(cstr) - 1)
 #define push_str(cur, str)  do { size_t len = strlen(str); memcpy(cur, str, len); cur += len; } while(0)
 
 void launch_in_fzf(struct options *options, char** argv)
@@ -44,9 +44,16 @@ void launch_in_fzf(struct options *options, char** argv)
     if (!filepath)
       exit(1);
     filepath += sizeof(FIELD_SEP) - 1;
-    len_filepath -= filepath - filebuff;
+    len_filepath -= filepath - filebuff; // sub size of the date/size field
   }
-  
+
+  // in case --fzf-shorten-name is set, the full filepath is between the two separator
+  char* sep = strchr(filepath, FIELD_SEP[0]);
+  if (sep) {
+    len_filepath = sep-filepath;
+    *sep = '\0';
+  }
+    
   int fd_query = query_fork(filepath, len_filepath);
 
   char query[FR_PATH_MAX] = {0};
@@ -63,19 +70,19 @@ void fill_preview_cmd(char* preview, struct options *options)
 {
   char* cur = preview;
 
-  push_cur(cur, "--preview=");
+  push_cstr(cur, "--preview=");
   if(options->search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE) {
-    push_cur(cur, "ls -lth --color -- ");
+    push_cstr(cur, "ls -lth --color -- ");
     push_column_id(cur);
   }
   else {
     switch (options->fzf_pane) {
       case FZF_PANE_CAT:
-        push_cur(cur, "cat -- ");
+        push_cstr(cur, "cat -- ");
         push_column_id(cur);
         break;
       case FZF_PANE_BAT:
-        push_cur(cur, BAT_CMD " --style='changes' --color always -- ");
+        push_cstr(cur, BAT_CMD " --style='changes' --color always -- ");
         push_column_id(cur);
         break;
       case FZF_PANE_NONE: default:
@@ -88,20 +95,20 @@ void fill_reload_cmd(char* reload, char** argv)
 {
   char* cur = reload;
 
-  push_cur(cur, "--bind=ctrl-r:reload(");
+  push_cstr(cur, "--bind=ctrl-r:reload(");
   push_str(cur, *argv); argv++;
-  push_cur(cur, " --__force-print0 ");
+  push_cstr(cur, " --__force-print0 ");
   while(*argv) {
     push_str(cur, *argv); argv++;
     *cur++ = ' ';
   }
-  push_cur(cur, ")");
+  push_cstr(cur, ")");
 }
 
 int fzf_fork(int fd_fr, struct options *options, char** argv)
 {
-  char preview_cmd[512] = "";
-  char reload_cmd[512] = "";
+  char preview_cmd[FR_PATH_MAX] = "";
+  char reload_cmd[FR_PATH_MAX] = "";
 
   char* fzf_argv[] = {
     FZF_CMD,
