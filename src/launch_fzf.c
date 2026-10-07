@@ -95,7 +95,7 @@ void fill_reload_cmd(char* reload, char** argv)
     push_str(cur, *argv); argv++;
     *cur++ = ' ';
   }
-  strcat(reload, ")");
+  push_cur(cur, ")");
 }
 
 int fzf_fork(int fd_fr, struct options *options, char** argv)
