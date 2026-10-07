@@ -5,7 +5,7 @@ int main(int argc, char** argv)
   struct options options = parse_options(argc, argv);
   
   if(options.fzf_activate)
-    launch_in_fzf(&options);
+    launch_in_fzf(&options, argv);
     
   struct list_entries l = findrecent(&options);
 

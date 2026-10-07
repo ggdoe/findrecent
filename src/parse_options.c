@@ -24,6 +24,7 @@
 #define TOK_NO_CONFIG           0xF9
 #define TOK_HELP                'h'
 #define TOK_VERSION             0xFF
+#define TOK__FORCEPRINT0        0xFE
 
 const char* program_name; // just to show in help
 static const
@@ -48,6 +49,8 @@ struct option long_options[] = {
   {"no-config",          no_argument,       0, TOK_NO_CONFIG       },
   {"help",               no_argument,       0, TOK_HELP            },
   {"version",            no_argument,       0, TOK_VERSION         },
+  {"__force-print0",     no_argument,       0, TOK__FORCEPRINT0    },
+  
   {0, 0, 0, 0}
 };
 
@@ -84,6 +87,7 @@ void print_help()
     "      --version                : print version.\n\n"
 
     "fzf commands:\n"
+    "  ctrl+r  : reload\n"
     "  ctrl+p  : toggle pane visibility\n"
     "  ctrl+l  : toggle the line wrap in the pane\n"
     "  enter   : show a prompt box, and execute a command on the file selected.\n"
@@ -113,6 +117,7 @@ struct options default_options()
     .fzf_activate       = false,
     .fzf_wrap_entry     = false,
     .fzf_search_date    = false,
+    .__fzf_force_print0 = false,
     .fzf_shorten_name   = 0,
     .fzf_pane           = FZF_PANE_CAT,
 
@@ -298,6 +303,8 @@ void parse_arg(struct options *options, int arg)
     case TOK_VERSION:
       printf("%s v%s\n", program_name, PRGM_VERSION);
       exit(0);
+    case TOK__FORCEPRINT0:
+      options->__fzf_force_print0 = true;
   }
 }
 

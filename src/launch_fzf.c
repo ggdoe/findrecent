@@ -1,13 +1,16 @@
 #include "defs.h"
 
 static void fill_preview_cmd(char* preview, struct options *options);
-static int fzf_fork(int fd_fr, struct options *options);
+static void fill_reload_cmd(char* reload, char** argv);
+static int fzf_fork(int fd_fr, struct options *options, char** argv);
 static int query_fork(char *filepath, ssize_t len_filepath);
 static void exec_query(char* query, char* filepath);
 
-#define push_column_id(buffer) strcat(buffer, (options->hide_date ? "{1}" : "{2}"))
+#define push_column_id(cur) (cur = (char*)memcpy(cur, (options->hide_date ? "{1}" : "{2}"), 3) + 3)
+#define push_cur(cur, cstr) (cur = (char*)memcpy(cur, cstr, sizeof(cstr) - 1) + sizeof(cstr) - 1)
+#define push_str(cur, str)  do { size_t len = strlen(str); memcpy(cur, str, len); cur += len; } while(0)
 
-void launch_in_fzf(struct options *options)
+void launch_in_fzf(struct options *options, char** argv)
 {
   int pipe_fr[2];
   pipe2(pipe_fr, O_CLOEXEC);
@@ -23,7 +26,7 @@ void launch_in_fzf(struct options *options)
 
   close(pipe_fr[1]);
 
-  int fd_fzf = fzf_fork(pipe_fr[0], options);
+  int fd_fzf = fzf_fork(pipe_fr[0], options, argv);
 
   kill(pid_fr, SIGTERM);
   waitpid(pid_fr, NULL, 0);
@@ -38,10 +41,8 @@ void launch_in_fzf(struct options *options)
 
   if (!options->hide_date) {
     filepath = strchr(filebuff, FIELD_SEP[0]);
-    if (!filepath) {
-      perror("strchr");
+    if (!filepath)
       exit(1);
-    }
     filepath += sizeof(FIELD_SEP) - 1;
     len_filepath -= filepath - filebuff;
   }
@@ -60,20 +61,22 @@ void launch_in_fzf(struct options *options)
 
 void fill_preview_cmd(char* preview, struct options *options)
 {
-  strcat(preview, "--preview=");
+  char* cur = preview;
+
+  push_cur(cur, "--preview=");
   if(options->search_type == SEARCH_DIRECTORIES && options->fzf_pane != FZF_PANE_NONE) {
-    strcat(preview, "ls -lth --color -- "); 
-    push_column_id(preview);
+    push_cur(cur, "ls -lth --color -- ");
+    push_column_id(cur);
   }
   else {
     switch (options->fzf_pane) {
       case FZF_PANE_CAT:
-        strcat(preview, "cat -- ");
-        push_column_id(preview);
+        push_cur(cur, "cat -- ");
+        push_column_id(cur);
         break;
       case FZF_PANE_BAT:
-        strcat(preview, BAT_CMD " --style='changes' --color always -- ");
-        push_column_id(preview);
+        push_cur(cur, BAT_CMD " --style='changes' --color always -- ");
+        push_column_id(cur);
         break;
       case FZF_PANE_NONE: default:
         break;
@@ -81,9 +84,24 @@ void fill_preview_cmd(char* preview, struct options *options)
   }
 }
 
-int fzf_fork(int fd_fr, struct options *options)
+void fill_reload_cmd(char* reload, char** argv)
+{
+  char* cur = reload;
+
+  push_cur(cur, "--bind=ctrl-r:reload(");
+  push_str(cur, *argv); argv++;
+  push_cur(cur, " --__force-print0 ");
+  while(*argv) {
+    push_str(cur, *argv); argv++;
+    *cur++ = ' ';
+  }
+  strcat(reload, ")");
+}
+
+int fzf_fork(int fd_fr, struct options *options, char** argv)
 {
   char preview_cmd[512] = "";
+  char reload_cmd[512] = "";
 
   char* fzf_argv[] = {
     FZF_CMD,
@@ -99,10 +117,12 @@ int fzf_fork(int fd_fr, struct options *options)
     options->fzf_wrap_entry ? "--wrap" : "--no-wrap",         // line break if the entry is too long
 
     preview_cmd, 
+    reload_cmd, 
     NULL,
   };
 
   fill_preview_cmd(preview_cmd, options);
+  fill_reload_cmd(reload_cmd, argv);
 
   int pipe_fzf[2];
   pipe2(pipe_fzf, O_CLOEXEC);

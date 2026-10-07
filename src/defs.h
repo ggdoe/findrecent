@@ -107,6 +107,7 @@ struct options {
   bool fzf_activate;
   bool fzf_wrap_entry;
   bool fzf_search_date;
+  bool __fzf_force_print0;
   uint32_t fzf_shorten_name;
   enum fzf_pane fzf_pane;
 
@@ -126,6 +127,6 @@ struct filename *push_buffer_filename(struct list_entries *restrict l, struct fi
 void push_entry(struct list_entries *restrict l, const char *restrict filename, struct filename *restrict pred, struct statx *restrict s, enum sort_type type);
 
 struct options parse_options(int argc, char** argv);
-void launch_in_fzf(struct options *options);
+void launch_in_fzf(struct options *options, char** argv);
 
 #endif // _DEFS_H_

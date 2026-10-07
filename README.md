@@ -16,6 +16,7 @@ To add or change colors you can check `src/gen_colormap.sh`.
 fzf can be enable with the option `--fzf`, fzf must be installed (<https://github.com/junegunn/fzf>).
 - preview pane can be enable with `--fzf-pane <str>`, options are `none`, `cat`, `bat`. bat must be installed (<https://github.com/sharkdp/bat>).
 - press `enter` to show a prompt box, and execute a command on the file selected. 
+- press `ctrl+r` to reload.
 - press `ctrl+p` to toggle the pane visibility.
 - press `ctrl+l` to toggle the line wrap in the pane.
 
