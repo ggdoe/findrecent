@@ -69,21 +69,18 @@ void print_entry_info(struct entry *e, enum sort_type sort_type)
     case SORT_SIZE: {
       size_t id=0;
       size_t size = e->size;
-      char symbols[] = {'B', 'K', 'M', 'G', 'T', 'P'}; 
+      static char symbols[] = {'B', 'K', 'M', 'G', 'T', 'P'}; 
       for(; (size>>(10*id))>=1024 && id < sizeof(symbols)/sizeof(char) - 1; id++);
-      printf("%10.2lf%c:  ", (double)size/(1ULL<<(10*id)), symbols[id]); 
+      printf("%10.2lf%c: ", (double)size/(1ULL<<(10*id)), symbols[id]); 
       break;
     }
     default: {
-      char buffer[32];
-      const size_t fixed_length = 26;
+      static char buffer[32];
       ctime_r((time_t*)&e->date.tv_sec, buffer); // ctime put a newline at end
       const size_t len = strlen(buffer);
       buffer[len-1] = ':';
-      for(size_t i=len; i<fixed_length; i++)
-        buffer[i] = ' ';
-      buffer[fixed_length] = '\0';
-      printf("%s", buffer);
+      buffer[len] = '\0';
+      printf("%s ", buffer);
       break;
     }
   }
